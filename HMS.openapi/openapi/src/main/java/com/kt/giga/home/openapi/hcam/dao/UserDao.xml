@@ -1,0 +1,567 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kt.giga.home.openapi.hcam.dao.UserDao">
+
+	<!-- 시퀀스 오브젝트 없는경우 런타임 생성함 -->
+	<update id="createMbrBasTableSequence">
+		CREATE SEQUENCE seq_mbr_bas START 1000000001
+	</update>
+
+	<!-- 회원 일련번호 생성 -->
+	<select id="createMbrSeq" resultType="long">
+		SELECT NEXTVAL('SEQ_MBR_BAS')
+	</select>
+
+	<!-- 서비스 대상 일련번호 조건으로 회원 일련번호 조회 -->
+	<select id=	"getMbrSeqBySvcTgtSeq" resultType="long">
+		SELECT
+				MBR_SEQ
+		FROM
+				SVC_TGT_BAS
+		WHERE
+				SVC_TGT_SEQ		= #{svcTgtSeq}
+	</select>
+
+	<!-- 기존에 존재하는 사용자 정보 조회 -->
+	<select id="getUserBase" resultType="User" parameterType="string">
+		SELECT 	MBR_SEQ			AS "mbrSeq",
+				MBR_ID			AS "mbrId",
+				CREDENTIAL_ID	AS "credentialId"
+		FROM 	MBR_BAS
+		WHERE	MBR_ID = #{mbrId}
+	</select>
+
+	<!-- 사용자 정보 삽입 -->
+	<insert id="insertUserBase" parameterType="User">
+		INSERT INTO MBR_BAS (
+			MBR_SEQ,
+			MBR_ID,
+			CREDENTIAL_ID 
+		)
+		VALUES (
+			#{mbrSeq}, 
+			#{mbrId},
+			#{credentialId}
+		)
+	</insert>
+
+	<!-- 서비스 사용자 삽입 -->
+	<insert id="insertServiceUserRelation" parameterType="User">
+		INSERT INTO SVC_MBR_REL (
+			DSTR_CD,
+			SVC_THEME_CD,
+			UNIT_SVC_CD,
+			MBR_SEQ
+		)
+		VALUES (
+			#{dstrCd},
+			#{svcThemeCd},
+			#{unitSvcCd},
+			#{mbrSeq}
+		)
+	</insert>
+
+	<!-- Credential ID 업데이트 -->
+	<update id="updateCredentialId">
+		UPDATE
+				MBR_BAS
+		SET
+				CREDENTIAL_ID	= #{credentialId}
+		WHERE
+				MBR_SEQ			= #{mbrSeq}
+	</update>
+
+	<!-- 기존에 존재하는 사용자 정보 조회 -->
+	<select id="selectAppUser" resultType="User">
+		SELECT 	MBR_SEQ		AS "mbrSeq",
+				PNS_REG_ID	AS "pnsRegId",
+				TEL_NO		AS "telNo"
+		FROM 	SVC_TGT_CONN_BAS
+		WHERE	DSTR_CD			= #{dstrCd}
+		  AND	SVC_THEME_CD	= #{svcThemeCd}
+		  AND	UNIT_SVC_CD		= #{unitSvcCd}
+		  AND	MBR_SEQ 		= #{mbrSeq}
+		  AND	CONN_TERML_ID 	= #{termlId} 
+	</select>
+
+	<!-- 앱 접속자 정보 삽입 -->
+	<insert id="insertAppUser" parameterType="User">
+		INSERT INTO SVC_TGT_CONN_BAS(
+			DSTR_CD,
+			SVC_THEME_CD,
+			UNIT_SVC_CD,
+			MBR_SEQ,			
+			CONN_TERML_ID,
+			PNS_REG_ID,
+			APPL_VER,
+			TEL_NO
+		)
+		VALUES (
+			#{dstrCd},
+			#{svcThemeCd},
+			#{unitSvcCd},
+			#{mbrSeq},
+			#{termlId},
+			#{pnsRegId},
+			#{applVer},
+			#{telNo}
+		)
+	</insert>
+
+	<!-- 앱 접속자 정보 업데이트 -->
+	<update id="updateAppUser" parameterType="User">
+		UPDATE	SVC_TGT_CONN_BAS
+		SET		<if test="pnsRegId != null and !pnsRegId.isEmpty()">
+				PNS_REG_ID		= #{pnsRegId},
+				</if>
+				<if test="telNo != null and !telNo.isEmpty()">
+				TEL_NO 			= #{telNo},
+				</if>
+				APPL_VER 		= #{applVer}
+		WHERE	DSTR_CD			= #{dstrCd}
+		AND		SVC_THEME_CD	= #{svcThemeCd}
+		AND		UNIT_SVC_CD		= #{unitSvcCd}
+		AND		MBR_SEQ			= #{mbrSeq}
+		AND		CONN_TERML_ID	= #{termlId}
+	</update>
+
+    <!-- 로그인 내역 추가 -->
+    <insert id="insertLoginHistory" parameterType="User">
+        INSERT
+          INTO tb_login_history
+            (
+                CONN_TERML_ID,
+                MBR_SEQ,
+                DSTR_CD,
+                SVC_THEME_CD,
+                UNIT_SVC_CD
+            )
+          VALUES (
+                #{termlId},
+                #{mbrSeq},
+                #{dstrCd},
+                #{svcThemeCd},
+                #{unitSvcCd}
+          )
+    </insert>
+
+    <select id="selectLoginHistory" resultType="LoginHistory">
+        SELECT
+          MBR_SEQ as mbrSeq,
+          TEL_NO  as telNo,
+          LOGIN_DATE as loginDateTime
+        FROM
+          SVC_TGT_CONN_BAS  tml,
+          TB_LOGIN_HISTORY  hst
+        WHERE
+          tml.CONN_TERML_ID = hst.CONN_TERML_ID AND
+          tml.MBR_SEQ = hst.MBR_SEQ AND
+          tml.DSTR_CD = hst.DSTR_CD AND
+          tml.SVC_THEME_CD = hst.SVC_THEME_CD AND
+          tml.UNIT_SVC_CD = hst.UNIT_SVC_CD AND
+          tml.MBR_SEQ           = #{mbrSeq}
+        LIMIT #{count}
+    </select>
+
+	<!--  앱 접속자 정보 삭제, termlId 기준 삭제 -->
+	<delete id="deleteAppUser">
+		DELETE
+		FROM
+				SVC_TGT_CONN_BAS
+		WHERE
+				DSTR_CD			= #{dstrCd}
+		AND		SVC_THEME_CD	= #{svcThemeCd}
+		AND		UNIT_SVC_CD		= #{unitSvcCd}
+		AND		MBR_SEQ			= #{mbrSeq}
+		AND		CONN_TERML_ID	= #{termlId}		
+	</delete>
+
+	<!-- 앱 접속자 토큰 정보 삽입, 200 바이트 잘라서 삽입, 사용은 하지 않음 -->
+	<insert id="insertAppUserToken" parameterType="User">
+		INSERT INTO SVC_TGT_CONN_ATHN_TXN (
+			DSTR_CD,
+			SVC_THEME_CD,
+			UNIT_SVC_CD,
+			MBR_SEQ,			
+			CONN_TERML_ID,
+			ATHN_TOKN_VAL,
+			ISS_DT
+		)
+		VALUES (
+			#{dstrCd},
+			#{svcThemeCd},
+			#{unitSvcCd},
+			#{mbrSeq},
+			#{termlId},
+			SUBSTR(#{authToken}, 1, 200),
+			now()
+		)
+	</insert>
+
+	<!-- 앱 접속자 토큰 정보 업데이트, 200 바이트 잘라서 업데이트, 사용은 하지 않음 -->
+	<update id="updateAppUserToken" parameterType="User">
+		UPDATE
+				SVC_TGT_CONN_ATHN_TXN
+		SET
+				ATHN_TOKN_VAL	= SUBSTR(#{authToken}, 1, 200),
+				ISS_DT			= now()
+		WHERE
+				DSTR_CD			= #{dstrCd}
+		AND		SVC_THEME_CD	= #{svcThemeCd}
+		AND		UNIT_SVC_CD		= #{unitSvcCd}
+		AND		MBR_SEQ			= #{mbrSeq}
+		AND		CONN_TERML_ID	= #{termlId}
+	</update>
+
+	<!-- 앱 접속자 토큰 삭제, 인증시간은 푸시 발송을 위해 유지하는것으로 변경 -->
+	<update id="updateAppUserTokenExpired" parameterType="User">
+		UPDATE
+				SVC_TGT_CONN_ATHN_TXN
+		SET
+				ATHN_TOKN_VAL	= null
+		WHERE
+				DSTR_CD			= #{dstrCd}
+		AND		SVC_THEME_CD	= #{svcThemeCd}
+		AND		UNIT_SVC_CD		= #{unitSvcCd}
+		AND		MBR_SEQ			= #{mbrSeq}
+		AND		CONN_TERML_ID	= #{termlId}
+	</update>
+
+	<!-- 앱 접속자 토큰 정보 삭제 -->
+	<delete id="deleteAppUserToken">
+		DELETE
+		FROM
+				SVC_TGT_CONN_ATHN_TXN
+		WHERE
+				DSTR_CD			= #{dstrCd}
+		AND		SVC_THEME_CD	= #{svcThemeCd}
+		AND		UNIT_SVC_CD		= #{unitSvcCd}
+		AND		MBR_SEQ			= #{mbrSeq}
+		AND		CONN_TERML_ID	= #{termlId}		
+	</delete>
+
+	<!-- 앱 접속자 리스트 조회 -->
+	<select id="getAppUserList" resultType="User" parameterType="User">
+
+		SELECT
+				<![CDATA[
+				BAS.CONN_TERML_ID			AS "termlId",
+				BAS.TEL_NO					AS "telNo",
+				CASE
+					WHEN TXN.ISS_DT < CURRENT_TIMESTAMP - interval '${expireTimeMinute} minute' THEN '0'
+					WHEN TXN.ATHN_TOKN_VAL IS NULL THEN '0'
+					ELSE '1'
+				END							AS "status"
+				]]>
+		FROM
+				SVC_TGT_CONN_BAS			AS BAS,
+				SVC_TGT_CONN_ATHN_TXN		AS TXN
+		WHERE
+				BAS.DSTR_CD			= TXN.DSTR_CD
+		AND		BAS.SVC_THEME_CD	= TXN.SVC_THEME_CD
+		AND		BAS.UNIT_SVC_CD		= TXN.UNIT_SVC_CD
+		AND		BAS.MBR_SEQ			= TXN.MBR_SEQ
+		AND		BAS.CONN_TERML_ID	= TXN.CONN_TERML_ID
+		AND		BAS.DSTR_CD			= #{dstrCd}
+		AND		BAS.SVC_THEME_CD	= #{svcThemeCd}
+		AND		BAS.UNIT_SVC_CD		= #{unitSvcCd}
+		AND		BAS.MBR_SEQ			= #{mbrSeq}
+		<if test="termlId != null and !termlId.isEmpty()">
+		AND		BAS.CONN_TERML_ID	= #{termlId}
+		</if>
+
+	</select>
+
+	<!-- 접속 단말 아이디의 회원 일련번호 조회 -->
+	<select id="getSvcTgtConnBasByTermlId" resultType="User">
+		SELECT	MBR_SEQ				AS "mbrSeq",
+				CONN_TERML_ID		AS "termlId",
+				TEL_NO				AS "telNo",
+				PNS_REG_ID			AS "pnsRegId"
+		FROM	SVC_TGT_CONN_BAS
+		WHERE	DSTR_CD				= #{dstrCd}
+		AND		SVC_THEME_CD		= #{svcThemeCd}
+		AND		UNIT_SVC_CD			= #{unitSvcCd}
+		AND		CONN_TERML_ID		= #{termlId}
+
+	</select>
+
+	<!-- 접속 단말 아이디의 회원 일련번호 조회 -->
+	<select id="getSvcTgtConnBasByPnsRegId" resultType="User">
+		SELECT	MBR_SEQ				AS "mbrSeq",
+				CONN_TERML_ID		AS "termlId",
+				TEL_NO				AS "telNo",
+				PNS_REG_ID			AS "pnsRegId"
+		FROM	SVC_TGT_CONN_BAS
+		WHERE	DSTR_CD				= #{dstrCd}
+		AND		SVC_THEME_CD		= #{svcThemeCd}
+		AND		UNIT_SVC_CD			= #{unitSvcCd}
+		AND		PNS_REG_ID			= #{pnsRegId}
+
+	</select>
+
+	<!-- Push 수신 대상 조회 -->
+	<select id="getPnsTargetList" resultType="User">
+		SELECT	BAS.CONN_TERML_ID			AS "termlId",
+				BAS.TEL_NO					AS "telNo",
+				BAS.PNS_REG_ID				AS "pnsRegId",
+				STP.SETUP_VAL				AS "setupVal"
+		FROM	SVC_TGT_CONN_BAS			AS BAS,
+				SVC_TGT_CONN_ATHN_TXN		AS TXN,
+				SVC_TGT_CONN_SETUP_TXN		AS STP
+		WHERE	BAS.PNS_REG_ID IS NOT NULL
+		AND		BAS.DSTR_CD					= TXN.DSTR_CD
+		AND		BAS.SVC_THEME_CD			= TXN.SVC_THEME_CD
+		AND		BAS.UNIT_SVC_CD				= TXN.UNIT_SVC_CD
+		AND		BAS.MBR_SEQ					= TXN.MBR_SEQ
+		AND		BAS.CONN_TERML_ID			= TXN.CONN_TERML_ID
+		
+		AND		BAS.DSTR_CD					= STP.DSTR_CD
+		AND		BAS.SVC_THEME_CD			= STP.SVC_THEME_CD
+		AND		BAS.UNIT_SVC_CD				= STP.UNIT_SVC_CD
+		AND		BAS.MBR_SEQ					= STP.MBR_SEQ
+		AND		BAS.CONN_TERML_ID			= STP.CONN_TERML_ID
+		
+		AND		BAS.DSTR_CD					= #{dstrCd}
+		AND		BAS.SVC_THEME_CD			= #{svcThemeCd}
+		AND		BAS.UNIT_SVC_CD				= #{unitSvcCd}
+		AND		BAS.MBR_SEQ					= #{mbrSeq}
+		
+		AND		STP.SETUP_CD				= #{setupCd}
+		AND		STP.SETUP_VAL				= 'Y'
+
+		AND		TXN.ISS_DT > CURRENT_TIMESTAMP - interval '${expireTimeMinute} minute'
+
+	</select>
+
+	<!-- 회원 일련번호가 널인 장치 조회 (청약 후 미개통 상태) -->
+	<select id="getNullMbrSpotDevBas" resultType="SpotDev">
+		SELECT
+				D.SVC_TGT_SEQ		AS "svcTgtSeq",
+				D.SPOT_DEV_SEQ		AS "spotDevSeq",
+				D.SPOT_DEV_ID		AS "spotDevId",
+				D.DEV_UU_ID			AS "devUUID",
+				D.DEV_NM			AS "spotDevNm"
+		FROM
+				SVC_TGT_BAS			AS S,
+				SPOT_DEV_BAS		AS D
+		WHERE
+				S.MBR_SEQ IS NULL
+		AND		S.SVC_TGT_SEQ		= D.SVC_TGT_SEQ
+		AND		S.SVC_TGT_ID IN
+		<foreach item="item" index="index" collection="custIdList" open="(" separator="," close=")">
+				#{item}
+		</foreach>
+	</select>
+
+	<!-- 서비스 대상 기본의 회원 일련번호 매핑 (청약 후 개통 처리) -->
+	<update id="updateSvcTgtBasMbrSeq" parameterType="User">
+		UPDATE
+				SVC_TGT_BAS
+		SET
+				MBR_SEQ			= #{mbrSeq}
+		WHERE
+				DSTR_CD			= #{dstrCd}
+		AND		SVC_THEME_CD	= #{svcThemeCd}
+		AND		UNIT_SVC_CD		= #{unitSvcCd}
+		AND		SVC_TGT_ID IN
+		<foreach item="item" index="index" collection="custIdList" open="(" separator="," close=")">
+				#{item}
+		</foreach>
+	</update>
+
+	<!-- 회원에 매핑된 서비스 대상 기본 수 조회 (회원 매핑된 청약 수) -->
+	<select id="getMbrSvcTgtBasCount" resultType="int">
+	
+		SELECT
+				COUNT(1)		AS "count"
+		FROM
+				SVC_TGT_BAS
+		WHERE
+				MBR_SEQ			= #{mbrSeq}
+		AND		DEL_YN			= 'N'
+	</select>
+
+	<!-- 동의 필요한 약관 수 -->
+	<select id="getAgreeRequiredTermsCount" parameterType="User" resultType="int">
+	select count(AAAA.*) from (
+		SELECT
+			case when ABCD.fd_agree_yn is null then 1 else 0 end AS YN
+		FROM
+		(
+			select
+				AB.* , CD.*
+			from (
+				select	A.*, B.pk_terms
+				from
+				(
+					SELECT MAX(
+						LPAD( split_part(fd_terms_ver, '.', 1) , 2 , '0') || '.' ||
+						LPAD( split_part(fd_terms_ver, '.', 2) , 2 , '0') || '.' ||
+						LPAD( split_part(fd_terms_ver, '.', 3) , 2 , '0')
+					) ver_num, fk_terms_code
+					FROM 		tb_terms
+					WHERE 		fk_cp_code = #{svcCode}
+					GROUP BY 	fk_terms_code
+				) A
+				left join
+				tb_terms B on (
+					A.fk_terms_code = B.fk_terms_code
+					and A.ver_num =
+					LPAD( split_part(B.fd_terms_ver, '.', 1) , 2 , '0') || '.' ||
+					LPAD( split_part(B.fd_terms_ver, '.', 2) , 2 , '0') || '.' ||
+					LPAD( split_part(B.fd_terms_ver, '.', 3) , 2 , '0')
+				)
+			) AB
+			left join (
+				select 	C.pk_terms_agree, C.fk_terms_code, D.mbr_seq, D.fd_agree_yn, D.fd_agree_date
+				from
+				(
+					select 		max(pk_terms_agree) pk_terms_agree, fk_terms_code
+					from 		tb_terms_agree
+					where 		mbr_seq = #{mbrSeq} and fd_retract_date is null
+					group by 	fk_terms_code
+				) C
+				left join
+				tb_terms_agree D on (
+					C.pk_terms_agree=D.pk_terms_agree
+				)
+			) CD on (AB.fk_terms_code=CD.fk_terms_code)
+			order by AB.fk_terms_code
+		) ABCD
+	) AAAA
+	where AAAA.YN=1
+	<!--
+		SELECT COUNT(C.*)
+  		FROM (
+			SELECT
+			CASE when B.fd_agree_yn IS NULL THEN 1
+			ELSE 0 END AS YN
+		    FROM tb_terms AS A
+		  	LEFT JOIN (
+				SELECT fk_terms, fd_agree_yn, mbr_seq
+		     	FROM tb_terms_agree
+		     	WHERE
+		      	pk_terms_agree IN (
+		       		SELECT MAX(pk_terms_agree)
+		       		FROM tb_terms_agree
+		       		<if test="mbrSeq !='' and mbrSeq != null">WHERE mbr_seq = #{mbrSeq}</if>
+		       		GROUP BY fk_terms
+		      	)
+	    	) AS B ON (A.pk_terms=B.fk_terms)
+	   		WHERE A.fk_cp_code =  #{svcCode}
+
+	    	AND
+
+		    LPAD( split_part(A.fd_terms_ver, '.', 1) , 2 , '0') || '.' ||
+		    LPAD( split_part(A.fd_terms_ver, '.', 2) , 2 , '0') || '.' ||
+		    LPAD( split_part(A.fd_terms_ver, '.', 3) , 2 , '0')
+
+	    	IN (
+		     	SELECT MAX(
+		      		LPAD( split_part(fd_terms_ver, '.', 1) , 2 , '0') || '.' ||
+		      		LPAD( split_part(fd_terms_ver, '.', 2) , 2 , '0') || '.' ||
+		      		LPAD( split_part(fd_terms_ver, '.', 3) , 2 , '0')
+		     	)
+		     	FROM tb_terms
+		     	WHERE fk_cp_code =  #{svcCode}
+		     	GROUP BY fk_terms_code
+	    	)
+  		) AS C
+
+  		WHERE C.YN=1
+ 	-->
+	</select>
+
+	<!-- 법정대리인 동의여부 조회 -->
+	<select id="getParentsAgreeCount" resultType="int" parameterType="User">
+		SELECT
+				COUNT(*) 
+		FROM 
+				TB_PARENTS_AGREE 
+		WHERE 
+				MBR_SEQ = #{mbrSeq} 
+		AND		FK_CP_CODE = #{svcCode}
+	</select>
+
+	<!-- 사용자 설정 조회 -->
+	<select id="getUserSetup" resultType="hashMap">
+		SELECT
+				SETUP_CD	AS "setupCd",		
+				SETUP_VAL	AS "setupVal"
+		FROM
+				SVC_TGT_CONN_SETUP_TXN
+		WHERE
+				DSTR_CD			= #{dstrCd}
+		AND		SVC_THEME_CD	= #{svcThemeCd}
+		AND		UNIT_SVC_CD		= #{unitSvcCd}
+		AND		MBR_SEQ			= #{mbrSeq}
+		AND		CONN_TERML_ID	= #{connTermlId}
+		AND		GROUP_SETUP_CD	= #{groupSetupCd}
+	</select>
+
+	<!-- 사용자 설정 삭제 -->
+	<delete id="deleteUserSetup">
+		DELETE
+		FROM
+				SVC_TGT_CONN_SETUP_TXN
+		WHERE
+				DSTR_CD			= #{dstrCd}
+		AND		SVC_THEME_CD	= #{svcThemeCd}
+		AND		UNIT_SVC_CD		= #{unitSvcCd}
+		<if test="mbrSeq != null">
+		AND		MBR_SEQ			= #{mbrSeq}
+		</if>
+		AND		CONN_TERML_ID	= #{connTermlId}
+		AND		GROUP_SETUP_CD	= #{groupSetupCd}
+	</delete>
+
+	<!-- 사용자 설정 삽입 -->
+	<insert id="insertUserSetup">
+		INSERT INTO SVC_TGT_CONN_SETUP_TXN (
+			DSTR_CD,
+			SVC_THEME_CD,
+			UNIT_SVC_CD,
+			MBR_SEQ,
+			CONN_TERML_ID,
+			GROUP_SETUP_CD,
+			SETUP_CD,
+			SETUP_VAL
+		) VALUES (
+			#{dstrCd},
+			#{svcThemeCd},
+			#{unitSvcCd},
+			#{mbrSeq},
+			#{connTermlId},
+			#{groupSetupCd},
+			#{setupCd},
+			#{setupVal}
+		)
+	</insert>
+
+	<!-- 사용자 설정 업데이트 -->
+	<update id="updateUserSetup">
+		UPDATE
+				SVC_TGT_CONN_SETUP_TXN
+		SET
+				SETUP_VAL		= #{setupVal}
+		WHERE
+				DSTR_CD			= #{dstrCd} 
+		AND		SVC_THEME_CD	= #{svcThemeCd} 
+		AND		UNIT_SVC_CD		= #{unitSvcCd}
+		AND		MBR_SEQ			= #{mbrSeq}
+		AND		CONN_TERML_ID	= #{connTermlId}
+		AND		GROUP_SETUP_CD	= #{groupSetupCd}
+		AND		SETUP_CD		= #{setupCd}
+	</update>
+
+    <update id="initializeMappedDevices">
+        UPDATE
+                SVC_TGT_BAS
+            SET MBR_SEQ = NULL
+            WHERE
+                MBR_SEQ = #{mbrSeq}
+    </update>
+
+</mapper>

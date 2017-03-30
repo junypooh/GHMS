@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kt.giga.home.cms.manage.dao.VerFrmwrDao">
+
+ 
+ 	<sql id= "verFrmwr">
+ 	(
+ 		SELECT 
+ 				pk_version_frmwr AS "pk"
+ 			,	fd_cp_code AS "cpCode"	
+ 			,	fd_admin_name AS "adminName"	
+ 			,	fd_ver_num	AS "verNum"		<!--  펌웨어 버전 -->
+ 			,	fd_ver_title AS "verTitle"	<!--  펌웨어 버전 설명  -->
+ 			,	fd_model_name AS "modelName"	<!-- 모델 명  -->
+ 			,	fd_mandatory_yn AS "mandatoryYN"	<!-- 업데이트 필수 여부  -->
+ 			,	fd_start_time AS "startTime"
+ 			,	fd_writer_id as "writerId" <!-- 작성자 -->
+ 			,	n.fd_regdate AS "regDate" 	<!--  등록일 2014.10.13 -->
+ 			,	n.fd_beta_yn AS "betaYN"
+ 			FROM tb_version_frmwr AS n 
+			LEFT OUTER JOIN (SELECT pk_admin_id, fd_admin_name FROM tb_admin) AS a 
+			ON n.fd_writer_id = a.pk_admin_id	
+			WHERE n.fd_cp_code IN (SELECT fk_cp_code FROM tb_admin_svc WHERE fk_admin_id = #{id}) AND n.fd_beta_yn = 'N'
+ 	 	) AS verFrmwr
+ 	</sql>
+ 	
+	<sql id="where">
+	
+		<trim prefix="WHERE" prefixOverrides="AND || OR ">
+			<if test="cpCode != null and cpCode != ''">
+				"cpCode" = #{cpCode}
+			</if>
+			<if test="searchColumn != null and searchColumn != null and searchString != null and searchString != ''">
+				AND "${searchColumn}" LIKE '%' || #{searchString} || '%'
+			</if>
+		</trim>	
+		
+	</sql>
+	
+	<select id="getCount" parameterType="Map" resultType="int">
+	
+		SELECT COUNT(pk) cnt 
+		FROM <include refid="verFrmwr"/> 
+		<include refid="where"/>
+		
+	</select>
+	
+	<select id="get" parameterType="Map" resultType="Map">
+	
+		SELECT 
+			"pk"
+		,	"cpCode"
+		,	"verNum"	<!--카메라버전 -->
+		,	"modelName"
+		,	"mandatoryYN" <!-- 업데이트 필수 여부 -->
+		,	"verTitle" 	<!-- 펌웨어 버전 설명  -->
+		,	"writerId" 		<!-- 등록자 아이디 -->
+		,	"startTime"
+		FROM <include refid="verFrmwr"/>  
+		WHERE "pk" = #{pk}
+		<if test="cpCode != null and cpCode != ''"> AND "cpCode" = #{cpCode}</if>
+	
+	</select>
+
+	<select id="getList" parameterType="Map"  resultType="Map">
+	
+		SELECT * 
+		FROM (
+		
+			SELECT * FROM <include refid="verFrmwr"/>
+			<include refid="where"/> 
+			 ORDER BY "pk" DESC
+		) AS verFrmwr 
+		LIMIT ${pageSize} OFFSET (#{page} - 1) * #{pageSize}
+		
+	</select>
+	
+	<insert id="register" parameterType="Map">
+	
+		INSERT INTO tb_version_frmwr(
+			fd_cp_code
+		,	fd_mandatory_yn
+		,	fd_start_time
+		,	fd_ver_num
+		,	fd_ver_title
+		,	fd_model_name
+		,	fd_writer_id
+		,	fd_writer_ip
+		,	fd_regdate	
+		,	fd_beta_yn
+		)
+		VALUES(
+			#{cpCode}
+		,	#{mandatoryYN}
+		,	#{start_date}
+		,	#{verNum}
+		,	#{verTitle}
+		,	#{modelName}
+		,	#{writerId}		
+		,	#{writerIp}		
+		,	#{regDate}
+		,	'N'
+		)
+	</insert>
+	
+	<update id="modify" parameterType="Map">
+	
+		UPDATE tb_version_frmwr SET 
+			fd_ver_title	=	#{verTitle}
+		,	fd_modifier_id	=	#{modifierId}
+		,	fd_modifier_ip	=	#{modifierIp}
+		,	fd_update_date	=	#{updateDate} 
+		,	fd_mandatory_yn	=	#{mandatoryYN}
+		WHERE pk_version_frmwr = #{pk}
+	
+	</update>
+	
+	<select id="getLastVer" parameterType="Map" resultType="String">
+	
+		SELECT 	fd_ver_num AS "verNum"
+		FROM 	tb_version_frmwr
+		WHERE 	fd_cp_code = #{cpCode} AND fd_beta_yn = 'N'
+		ORDER BY fd_regdate DESC
+		LIMIT 1
+		
+	</select>	
+	
+		<delete id="remove" parameterType="Map">
+	
+		DELETE FROM tb_version_frmwr 
+		WHERE pk_version_frmwr = #{pk}  		
+	
+	</delete>
+</mapper>

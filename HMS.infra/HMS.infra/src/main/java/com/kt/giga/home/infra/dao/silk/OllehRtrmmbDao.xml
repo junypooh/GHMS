@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kt.giga.home.infra.dao.silk.OllehRtrmmbDao">
+	
+	<select id="selectOllehRtrmmb" parameterType="com.kt.giga.home.infra.domain.silk.OllehRtrmmb"
+			resultType="com.kt.giga.home.infra.domain.silk.OllehRtrmmb">
+		 SELECT A.SEQ AS seq,
+		 		A.PR_FLAG AS prFlag, 
+				A.TRIGGER_DATE AS triggerDate,
+				A.RECEIVED_DATE AS receivedDate,
+				A.PROC_RSLT AS procRslt,
+				A.VIRTL_CONT_ID AS virtlContId,
+				A.CREDENTIAL_ID AS credentialId,
+				A.LOGIN_ID AS loginId,
+				A.RTRMMB_DT AS rtrmmbDt,
+				A.LOGIN_ID_TYPE_CD AS loginIdTtypeCd
+		   FROM OLLEH_RTRMMB_TXN A
+		  WHERE A.PROC_RSLT = #{procRslt}
+		    AND A.LOGIN_ID_TYPE_CD = #{loginIdTypeCd}
+	</select>
+	
+	<update id="updateOllehRtrmmb" parameterType="com.kt.giga.home.infra.domain.silk.OllehRtrmmb">
+		UPDATE OLLEH_RTRMMB_TXN 
+		   SET PROC_RSLT = #{procRslt}
+		 WHERE SEQ = #{seq}
+	</update>	
+
+</mapper>

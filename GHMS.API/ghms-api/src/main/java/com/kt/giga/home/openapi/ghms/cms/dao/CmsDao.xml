@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kt.giga.home.openapi.ghms.cms.dao.CmsDao">
+
+	<!-- 코치 가이드 조회 -->
+	<select id="selectGuideCoach" resultType="com.kt.giga.home.openapi.ghms.cms.domain.vo.CmsVo">
+		SELECT 
+			A.*
+		FROM 
+			tb_guide_coach AS A
+		WHERE 
+			A.fd_cp_code		= #{cpCode}
+			AND A.fd_ver_num	= #{fd_ver_num}
+			AND fd_open_yn		= 'Y'
+		ORDER BY 
+			pk_guide_coach DESC	
+	</select>
+
+	<!-- 웰컴 가이드 조회 -->
+	<select id="selectGuideWelcome" resultType="com.kt.giga.home.openapi.ghms.cms.domain.vo.CmsVo">
+		SELECT 
+			A.*
+		FROM 
+			tb_guide_welcome AS A
+		WHERE 
+			A.fd_cp_code		= #{cpCode}
+			AND A.fd_ver_num	= #{fd_ver_num}
+			AND fd_open_yn		= 'Y'
+		ORDER BY 
+			pk_guide_welcome DESC	
+		Limit
+			1
+	</select>
+	
+	<!-- App 최신버전 조회 -->
+	<select id="selectVerAppLast" resultType="com.kt.giga.home.openapi.ghms.cms.domain.vo.CmsVo">
+		SELECT 
+			*
+		FROM 
+			tb_version_app
+		WHERE
+			fd_ver_num = (
+				SELECT 
+					MAX(fd_ver_num) AS fd_ver_num
+				FROM 
+					tb_version_app
+				WHERE 
+						fd_cp_code = #{cpCode}
+					and fd_os_code = #{osCode}
+					and fd_phone_type_code = #{phoneTypeCode}
+			)
+			and fd_cp_code = #{cpCode}
+			and fd_os_code = #{osCode}
+			and fd_phone_type_code = #{phoneTypeCode}
+	</select>
+	
+	<!-- 펌웨어 최신버전 조회 -->
+	<select id="selectVerFrmwrLast" resultType="com.kt.giga.home.openapi.ghms.cms.domain.vo.CmsVo">
+		SELECT 
+			*
+		FROM 
+			tb_version_Frmwr
+		WHERE
+			fd_ver_num = (
+				SELECT 
+					MAX(fd_ver_num) AS fd_ver_num
+				FROM 
+					tb_version_Frmwr
+				WHERE 
+						fd_cp_code = #{cpCode}
+			)
+	</select>
+	
+</mapper>
+
+

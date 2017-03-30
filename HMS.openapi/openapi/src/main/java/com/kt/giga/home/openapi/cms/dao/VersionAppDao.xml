@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kt.giga.home.openapi.cms.dao.VersionAppDao">
+
+	<select id="getVerAppLast" parameterType="string" resultType="VersionApp">
+	SELECT 
+			*
+		FROM 
+			tb_version_app
+		WHERE
+			LPAD( split_part(fd_ver_num, '.', 1) , 2 , '0') || '.' ||
+			LPAD( split_part(fd_ver_num, '.', 2) , 2 , '0') || '.' ||
+			LPAD( split_part(fd_ver_num, '.', 3) , 2 , '0') || '.' ||
+			LPAD( split_part(fd_ver_num, '.', 4) , 2 , '0')
+			= (
+				SELECT 
+					MAX(
+						LPAD( split_part(fd_ver_num, '.', 1) , 2 , '0') || '.' ||
+						LPAD( split_part(fd_ver_num, '.', 2) , 2 , '0') || '.' ||
+						LPAD( split_part(fd_ver_num, '.', 3) , 2 , '0') || '.' ||
+						LPAD( split_part(fd_ver_num, '.', 4) , 2 , '0')
+					) AS fd_ver_num
+				FROM 
+					tb_version_app
+				WHERE 
+						fd_cp_code = #{cpCode}
+					and fd_os_code = #{osCode}
+					and fd_phone_type_code = #{phoneTypeCode}
+			)
+			and fd_cp_code = #{cpCode}
+			and fd_os_code = #{osCode}
+			and fd_phone_type_code = #{phoneTypeCode}
+	<!-- 
+		SELECT 
+			*
+		FROM 
+			tb_version_app
+		WHERE
+			fd_ver_num = (
+				SELECT 
+					MAX(fd_ver_num) AS fd_ver_num
+				FROM 
+					tb_version_app
+				WHERE 
+						fd_cp_code = #{cpCode}
+					and fd_os_code = #{osCode}
+					and fd_phone_type_code = #{phoneTypeCode}
+			)
+			and fd_cp_code = #{cpCode}
+			and fd_os_code = #{osCode}
+			and fd_phone_type_code = #{phoneTypeCode}
+	-->
+	</select>
+	
+	<select id="getVerAppList" parameterType="string" resultType="VersionApp">
+		SELECT 
+			*
+		FROM 
+			tb_version_app
+		WHERE			
+				fd_cp_code = #{cpCode}
+			and fd_os_code = #{osCode}
+			and fd_phone_type_code = #{phoneTypeCode}
+	</select>
+
+</mapper>

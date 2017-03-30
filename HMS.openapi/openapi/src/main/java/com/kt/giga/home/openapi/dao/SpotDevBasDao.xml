@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kt.giga.home.openapi.dao.SpotDevBasDao">
+
+	<select id="getSpotDevBas" parameterType="string" resultType="SpotDevBas">
+		SELECT
+			A.*
+			,	MAX(CASE B.spot_dev_item_nm WHEN 'NAME001' THEN B.spot_dev_item_val END) AS mac
+			,	MAX(CASE B.spot_dev_item_nm WHEN 'NAME002' THEN B.spot_dev_item_val END) AS controlStatus
+			,	MAX(CASE B.spot_dev_item_nm WHEN 'NAME003' THEN B.spot_dev_item_val END) AS apName
+			,	MAX(CASE B.spot_dev_item_nm WHEN 'NAME004' THEN B.spot_dev_item_val END) AS apPower
+		FROM
+			spot_dev_bas AS A
+			LEFT JOIN 
+				spot_dev_expnsn_bas AS B ON (A.svc_tgt_seq=B.svc_tgt_seq AND A.spot_dev_seq=B.spot_dev_seq)
+		WHERE
+			A.spot_dev_id = #{spotDevId}
+	</select>
+	
+	<select id="getSpotDevBasList" parameterType="HashMap" resultType="SpotDevBas">
+		SELECT
+			A.*
+			,	MAX(CASE B.spot_dev_item_nm WHEN 'NAME001' THEN B.spot_dev_item_val END) AS mac
+			,	MAX(CASE B.spot_dev_item_nm WHEN 'NAME002' THEN B.spot_dev_item_val END) AS controlStatus
+			,	MAX(CASE B.spot_dev_item_nm WHEN 'NAME003' THEN B.spot_dev_item_val END) AS apName
+			,	MAX(CASE B.spot_dev_item_nm WHEN 'NAME004' THEN B.spot_dev_item_val END) AS apPower
+			
+				MAX(CASE snsn_tag_dtl_cd WHEN 'CODE001' THEN msr_val END) AS status
+			,	MAX(CASE snsn_tag_dtl_cd WHEN 'CODE002' THEN msr_val END) AS resolution
+			,	MAX(CASE snsn_tag_dtl_cd WHEN 'CODE003' THEN msr_val END) AS sdCard
+			,	MAX(CASE snsn_tag_dtl_cd WHEN 'CODE004' THEN msr_val END) AS reverted
+			,	MAX(CASE snsn_tag_dtl_cd WHEN 'CODE005' THEN msr_val END) AS firmVer	
+			,	MAX(CASE snsn_tag_dtl_cd WHEN 'CODE006' THEN msr_val END) AS newFirmVer
+			,	MAX(CASE snsn_tag_dtl_cd WHEN 'CODE007' THEN msr_val END) AS firmUpOption
+			,	MAX(CASE snsn_tag_dtl_cd WHEN 'CODE008' THEN msr_val END) AS privacy
+			,	MAX(CASE snsn_tag_dtl_cd WHEN 'CODE009' THEN msr_val END) AS apName				
+			,	MAX(CASE snsn_tag_dtl_cd WHEN 'CODE010' THEN msr_val END) AS apPower
+			,	MAX(CASE snsn_tag_dtl_cd WHEN 'CODE011' THEN msr_val END) AS record
+				
+		FROM
+			spot_dev_bas AS A
+			LEFT JOIN 
+				spot_dev_expnsn_bas AS B ON (A.svc_tgt_seq = B.svc_tgt_seq AND A.spot_dev_seq = B.spot_dev_seq)
+			LEFT JOIN (
+				SELECT 	
+					CA.setup_val
+					, CB.snsn_tag_dtl_cd
+				FROM 	
+					spot_dev_setup_bas AS CA
+					LEFT JOIN
+						spot_dev_genl_setup_txn AS CB ON (CA.spot_dev_setup_seq=CB.spot_dev_setup_seq)
+				WHERE	
+					svc_tgt_seq = #{svcTgtSeq}
+					AND snsn_tag_dtl_cd IN (
+						'CODE001', 'CODE002', 'CODE003', 'CODE004', 'CODE005', 'CODE006', 'CODE007', 'CODE008', 'CODE009', 'CODE010', 'CODE011'
+					)
+			) AS C
+			LEFT JOIN (
+				SELECT 	
+						CA.setup_val
+						, CB.snsn_tag_dtl_cd
+					FROM 	
+						spot_dev_setup_bas AS CA
+						LEFT JOIN
+							spot_dev_genl_setup_txn AS CB ON (CA.spot_dev_setup_seq=CB.spot_dev_setup_seq)
+					WHERE	
+						svc_tgt_seq = #{svcTgtSeq}
+						AND snsn_tag_dtl_cd IN (
+							'CODE001', 'CODE002', 'CODE003', 'CODE004', 'CODE005', 'CODE006', 'CODE007', 'CODE008', 'CODE009', 'CODE010', 'CODE011'
+						)
+				) AS D
+				
+				
+		WHERE
+			A.svc_tgt_seq = #{svcTgtSeq}
+		ORDER BY
+			A.${sortField}
+			A.${orderBy}	
+	</select>	
+
+</mapper>

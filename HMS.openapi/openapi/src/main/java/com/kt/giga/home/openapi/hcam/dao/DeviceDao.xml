@@ -1,0 +1,852 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kt.giga.home.openapi.hcam.dao.DeviceDao">
+
+	<!-- 현장 장치 키 조회 -->
+	<select id="getSpotDevKey" resultType="hashMap">
+		SELECT
+				SVC_TGT_SEQ::bigint		AS "svcTgtSeq",
+				SPOT_DEV_SEQ::bigint	AS "spotDevSeq",
+				SPOT_DEV_ID				AS "spotDevId"
+		FROM
+				SPOT_DEV_BAS
+		WHERE
+				DEV_UU_ID = #{devUUID}
+	</select>
+
+	<!-- 현장 장치 UUID 조회 -->
+	<select id="getSpotDevUUID" resultType="string">
+		SELECT
+				DEV_UU_ID
+		FROM
+				SPOT_DEV_BAS
+		WHERE
+				SVC_TGT_SEQ		= #{svcTgtSeq}
+		AND		SPOT_DEV_SEQ	= #{spotDevSeq}
+	</select>
+
+	<!-- 현장 장치 조회 -->
+	<select id="getSpotDev" resultType="SpotDev">
+		SELECT
+				ST.OPRT_STTUS_CD		AS "oprtSttusCd",
+				ST.SVC_CONT_ID			AS "svcContId",
+				DV.SVC_TGT_SEQ::bigint	AS "svcTgtSeq",
+				DV.SPOT_DEV_SEQ::bigint	AS "spotDevSeq",
+				DV.DEV_UU_ID			AS "devUUID",
+				DV.SPOT_DEV_ID			AS "spotDevId",
+				DV.DEV_NM				AS "spotDevNm",
+				DV.FRMWR_VER_NO			AS "frmwrVerNo",
+				DV.ATHN_NO				AS "athnNo",
+				DV.DEV_STTUS_CD			AS "devSttusCd",
+				MD.DEV_MODEL_NM			AS "modelNm",
+				MD.TERML_MAKR_NM		AS "makrNm"
+		FROM
+				SVC_TGT_BAS				AS ST,
+				SPOT_DEV_BAS			AS DV,
+				DEV_MODEL_BAS			AS MD
+		WHERE
+				ST.SVC_TGT_SEQ		= DV.SVC_TGT_SEQ
+		<if test="svcCode != null and !svcCode.isEmpty()">
+		AND		ST.UNIT_SVC_CD		= #{svcCode}
+		</if>
+		AND		DV.DEV_MODEL_SEQ	= MD.DEV_MODEL_SEQ
+		AND		DV.DEL_YN			= 'N'
+		<if test="devUUID != null and !devUUID.isEmpty()">
+		AND		DV.DEV_UU_ID		= #{devUUID}
+		</if>
+		<if test="svcTgtSeq != null">
+		AND		DV.SVC_TGT_SEQ		= #{svcTgtSeq}
+		</if>
+		<if test="spotDevSeq != null">
+		AND		DV.SPOT_DEV_SEQ		= #{spotDevSeq}
+		</if>
+	</select>
+
+	<!-- 회원에 연결된 현장 장치 조회 -->
+	<select id="getMemberSpotDev" resultType="SpotDev">
+		SELECT
+				MB.MBR_SEQ				AS "mbrSeq",
+				MB.MBR_ID				AS "mbrId",
+				MB.CREDENTIAL_ID		AS "credentialId",
+				ST.OPRT_STTUS_CD		AS "oprtSttusCd",
+				ST.SVC_CONT_ID			AS "svcContId",
+				DV.SVC_TGT_SEQ::bigint	AS "svcTgtSeq",
+				DV.SPOT_DEV_SEQ::bigint	AS "spotDevSeq",
+				DV.SPOT_DEV_ID			AS "spotDevId",
+				DV.DEV_UU_ID			AS "devUUID",
+				DV.DEV_NM				AS "spotDevNm",
+        (SELECT
+        CASE
+        WHEN COUNT(svc_tgt_seq) > 0 THEN 1
+        ELSE 0
+        END
+        FROM tb_version_frmwr_cam AS FR
+        WHERE FR.SVC_TGT_SEQ = DV.SVC_TGT_SEQ AND FR.SPOT_DEV_SEQ = DV.SPOT_DEV_SEQ) AS "beta",
+<!-- 				DV.FRMWR_VER_NO			AS "frmwrVerNo", -->
+				DV.ATHN_NO				AS "athnNo",
+				DV.DEV_STTUS_CD			AS "devSttusCd",
+				MD.DEV_MODEL_NM			AS "modelNm",
+				MD.TERML_MAKR_NM		AS "makrNm"
+		FROM
+				MBR_BAS					AS MB,
+				SVC_TGT_BAS				AS ST,
+				SPOT_DEV_BAS			AS DV,
+				DEV_MODEL_BAS			AS MD
+		WHERE
+				ST.UNIT_SVC_CD		= #{svcCode}
+		AND		MB.MBR_SEQ			= ST.MBR_SEQ
+		AND		ST.SVC_TGT_SEQ		= DV.SVC_TGT_SEQ
+		AND		DV.DEV_MODEL_SEQ	= MD.DEV_MODEL_SEQ
+		AND		DV.DEL_YN			= 'N'
+		<if test="mbrSeq != null">
+		AND		MB.MBR_SEQ			= #{mbrSeq}
+		</if>
+		<if test="devUUID != null and !devUUID.isEmpty()">
+		AND		DV.DEV_UU_ID		= #{devUUID}
+		</if>
+		<if test="svcTgtSeq != null">
+		AND		DV.SVC_TGT_SEQ		= #{svcTgtSeq}
+		</if>
+		<if test="spotDevSeq != null">
+		AND		DV.SPOT_DEV_SEQ		= #{spotDevSeq}
+		</if>
+	</select>
+
+	<!-- 회원에 연결된 서비스 대상 키 조회 -->
+	<select id="getMemberSvcTgtSeq" resultType="long">
+		SELECT
+				ST.SVC_TGT_SEQ::bigint		AS "svcTgtSeq"
+		FROM
+				MBR_BAS					AS MB,
+				SVC_TGT_BAS				AS ST
+		WHERE
+				MB.MBR_SEQ			= #{mbrSeq}
+		AND		ST.UNIT_SVC_CD		= #{svcCode}
+		AND		MB.MBR_SEQ			= ST.MBR_SEQ
+	</select>
+
+	<!-- 현장 장치 펌웨어 버전 업데이트 -->
+	<update id="updateSpotDevFirmwareVersion">
+		UPDATE
+				SPOT_DEV_BAS
+		SET
+				FRMWR_VER_NO			= #{frmwrVerNo}
+		WHERE
+				SVC_TGT_SEQ				= #{svcTgtSeq}
+		AND		SPOT_DEV_SEQ			= #{spotDevSeq}
+	</update>
+
+	<!-- 펌웨업 업그레이드 진행중 리스트 조회 -->
+	<select id="getFirmwareUpgradeDeviceList" resultType="SpotDev">
+
+		SELECT
+				DEV.SVC_TGT_SEQ::bigint		AS "svcTgtSeq",
+				DEV.SPOT_DEV_SEQ::bigint	AS "spotDevSeq",
+				DEV.DEV_UU_ID				AS "devUUID"
+		FROM
+				SPOT_DEV_BAS			DEV,
+				SPOT_DEV_EXPNSN_BAS		EXP
+		WHERE
+				DEV.SVC_TGT_SEQ			= EXP.SVC_TGT_SEQ
+		AND		DEV.SPOT_DEV_SEQ		= EXP.SPOT_DEV_SEQ
+		AND		DEV.USE_YN = 'Y'
+		AND		EXP.SPOT_DEV_ITEM_NM	= 'upgradeStatus'
+		AND		EXP.SPOT_DEV_ITEM_VAL	IN ('10','30','40','50')
+
+	</select>
+	
+	<!-- 펌웨업 업그레이드 완료 리스트 조회 -->
+	<select id="getFirmwareUpgradeCompleteDeviceList" resultType="SpotDev">
+
+		SELECT
+				DEV.SVC_TGT_SEQ::bigint		AS "svcTgtSeq",
+				DEV.SPOT_DEV_SEQ::bigint	AS "spotDevSeq",
+				DEV.DEV_UU_ID				AS "devUUID"
+		FROM
+				SPOT_DEV_BAS			DEV,
+				SPOT_DEV_EXPNSN_BAS		EXP
+		WHERE
+				DEV.SVC_TGT_SEQ			= EXP.SVC_TGT_SEQ
+		AND		DEV.SPOT_DEV_SEQ		= EXP.SPOT_DEV_SEQ
+		AND		DEV.USE_YN = 'Y'
+		AND		EXP.SPOT_DEV_ITEM_NM	= 'upgradeStatus'
+		AND		EXP.SPOT_DEV_ITEM_VAL	IN ('90')
+
+	</select>
+
+	<!-- 현장 장치 상세 정보 삽입 -->
+	<insert id="insertSpotDevDtl">
+		INSERT INTO SPOT_DEV_EXPNSN_BAS (
+			SVC_TGT_SEQ,
+			SPOT_DEV_SEQ,
+			SPOT_DEV_ITEM_NM,
+			SPOT_DEV_ITEM_VAL
+		) VALUES (
+			#{svcTgtSeq},
+			#{spotDevSeq},
+			#{spotDevItemNm},
+			#{spotDevItemVal}
+		)
+	</insert>
+
+	<!-- 현장 장치 상세 정보 조회 -->
+	<select id="getSpotDevDtl" resultType="SpotDevDtl">
+		SELECT
+				SPOT_DEV_ITEM_NM		AS "atribNm",
+				SPOT_DEV_ITEM_VAL		AS "atribVal"
+		FROM
+				SPOT_DEV_EXPNSN_BAS
+		WHERE
+				SVC_TGT_SEQ			= #{svcTgtSeq}
+		AND		SPOT_DEV_SEQ		= #{spotDevSeq}
+		<if test="spotDevItemNm != null and !spotDevItemNm.isEmpty()">
+		AND		SPOT_DEV_ITEM_NM	= #{spotDevItemNm}
+		</if>
+	</select>
+	
+	<!-- 사용자별 현장 장치 상세 정보 조회 -->
+	<select id="getSpotDevDtlByMbrId" resultType="Map">
+		SELECT
+				A.SPOT_DEV_ITEM_NM		AS "atribNm",
+				A.SPOT_DEV_ITEM_VAL		AS "atribVal",
+				B.DEV_UU_ID				AS "devUUID"
+		FROM
+				SPOT_DEV_EXPNSN_BAS A,
+				SPOT_DEV_BAS B,
+				SVC_TGT_BAS C
+		WHERE	A.SVC_TGT_SEQ = B.SVC_TGT_SEQ
+		AND		A.SPOT_DEV_SEQ = B.SPOT_DEV_SEQ
+		AND		A.SVC_TGT_SEQ = C.SVC_TGT_SEQ
+		AND		C.MBR_SEQ = #{mbrSeq}
+		AND		B.USE_YN = 'Y'
+		AND		C.DEL_YN = 'N'
+		<if test="spotDevItemNm != null and !spotDevItemNm.isEmpty()">
+		AND		A.SPOT_DEV_ITEM_NM	= #{spotDevItemNm}
+		</if>
+	</select>
+
+	<!-- 현장 장치 상세 정보 복수 조회 -->
+	<select id="getSpotDevDtls" resultType="SpotDevDtl">
+		SELECT
+				SPOT_DEV_ITEM_NM		AS "atribNm",
+				SPOT_DEV_ITEM_VAL		AS "atribVal"
+		FROM
+				SPOT_DEV_EXPNSN_BAS
+		WHERE
+				SVC_TGT_SEQ			= #{svcTgtSeq}
+		AND		SPOT_DEV_SEQ		= #{spotDevSeq}
+		<if test="spotDevItemNms != null and !spotDevItemNms.isEmpty()">
+		AND 	SPOT_DEV_ITEM_NM IN
+			<foreach collection="spotDevItemNms" item="item" index="index" separator="," open="(" close=")">
+				#{item}
+			</foreach>
+		</if>
+	</select>
+
+	<!-- 현장 장치 상태 업데이트 -->
+	<update id="updteSpotDevStatus">
+		UPDATE
+				SPOT_DEV_BAS
+		SET
+				DEV_STTUS_CD			= #{devSttusCd},
+				AMD_DT					= now()
+		WHERE
+				SVC_TGT_SEQ				= #{svcTgtSeq}
+		AND		SPOT_DEV_SEQ			= #{spotDevSeq}
+		AND		DEV_STTUS_CD			= '00'
+	</update>
+
+	<!-- 현장 장치 상세 정보 업데이트 -->
+	<update id="updateSpotDevDtl">
+		UPDATE
+				SPOT_DEV_EXPNSN_BAS
+		SET
+				SPOT_DEV_ITEM_VAL		= #{spotDevItemVal}
+		WHERE
+				SVC_TGT_SEQ				= #{svcTgtSeq}
+		AND		SPOT_DEV_SEQ			= #{spotDevSeq}
+		AND		SPOT_DEV_ITEM_NM		= #{spotDevItemNm}
+	</update>
+
+	<!-- 현장 장치 상세 정보 업데이트 -->
+	<update id="updateSpotDevDtlInc">
+		UPDATE
+				SPOT_DEV_EXPNSN_BAS
+		SET
+				SPOT_DEV_ITEM_VAL		= CAST(SPOT_DEV_ITEM_VAL as numeric) + 1
+		WHERE
+				SVC_TGT_SEQ				= #{svcTgtSeq}
+		AND		SPOT_DEV_SEQ			= #{spotDevSeq}
+		AND		SPOT_DEV_ITEM_NM		= #{spotDevItemNm}
+	</update>
+
+	<!-- 현장 장치 상세 정보 Upsert -->
+
+	<!-- 설정 기본 정보 삽입 -->
+	<insert id="insertSpotDevSetupBase">
+		INSERT INTO SPOT_DEV_SETUP_BAS (
+			SVC_TGT_SEQ,
+			SPOT_DEV_SEQ,
+			SNSN_TAG_CD,
+			DEL_YN,
+			CRET_DT
+		) VALUES (
+			#{svcTgtSeq},
+			#{spotDevSeq},
+			#{snsnTagCd},
+			'N',
+			NOW()
+		)
+	</insert>
+
+	<!-- 설정 기본 정보 삽입 -->
+	<delete id="deleteSpotDevSetupBaseByDevice">
+		DELETE
+		FROM	SPOT_DEV_SETUP_BAS
+		WHERE
+				SVC_TGT_SEQ		= #{svcTgtSeq}
+		AND		SPOT_DEV_SEQ	= #{spotDevSeq}
+	</delete>
+
+	<!-- 일반 설정 조회 -->
+	<select id="getSpotDevGenSetup" resultType="GenlSetupData">
+		SELECT
+				SNSN_TAG_CD				AS "snsnTagCd",
+				SETUP_VAL				AS "setupVal"
+		FROM
+				SPOT_DEV_GENL_SETUP_TXN
+		WHERE
+				SVC_TGT_SEQ		= #{svcTgtSeq}
+		AND		SPOT_DEV_SEQ	= #{spotDevSeq}
+	</select>
+
+	<!-- 일반 설정 값 조회 -->
+	<select id="getSpotDevGenSetupVal" resultType="string">
+		SELECT
+				SETUP_VAL				AS "setupVal"
+		FROM
+				SPOT_DEV_GENL_SETUP_TXN
+		WHERE
+				SVC_TGT_SEQ		= #{svcTgtSeq}
+		AND		SPOT_DEV_SEQ	= #{spotDevSeq}
+		AND		SNSN_TAG_CD		= #{snsnTagCd}
+	</select>
+
+	<!--
+		일반 설정 Batch Upsert
+		동시 실행 시 Race Condition 발생 가능
+	-->
+	<update id="updateSpotDevGenSetups">
+		WITH
+		newSetupDatas (SNSN_TAG_CD, SETUP_VAL) AS (
+			VALUES
+			<foreach collection="genlSetupDatas" item="item" index="index" separator=",">
+				(#{item.snsnTagCd}, #{item.setupVal})
+			</foreach>
+		),
+		upsert AS (
+			UPDATE
+				SPOT_DEV_GENL_SETUP_TXN T
+			SET
+				SETUP_VAL		= sd.SETUP_VAL,
+				AMD_DT			= NOW()
+			FROM
+				newSetupDatas sd
+			WHERE
+				T.SNSN_TAG_CD	= sd.SNSN_TAG_CD
+			AND	SVC_TGT_SEQ		= #{svcTgtSeq}
+			AND	SPOT_DEV_SEQ	= #{spotDevSeq}
+			RETURNING t.*
+		)
+		INSERT INTO
+			SPOT_DEV_GENL_SETUP_TXN
+		(
+			SVC_TGT_SEQ,
+			SPOT_DEV_SEQ,
+			SNSN_TAG_CD,
+			SETUP_VAL,
+			DEL_YN,
+			CRET_DT
+		)
+		SELECT
+			#{svcTgtSeq},
+			#{spotDevSeq},
+			SNSN_TAG_CD,
+			SETUP_VAL,
+			'N',
+			NOW()
+		FROM
+			newSetupDatas
+		WHERE NOT EXISTS
+		(
+			SELECT 1 FROM
+				upsert up
+			WHERE
+				up.SNSN_TAG_CD = newSetupDatas.SNSN_TAG_CD
+		)
+	</update>
+
+	<!-- 일반 설정 값 변경 -->
+	<update id="updateSpotDevGenSetup">
+		UPDATE
+				SPOT_DEV_GENL_SETUP_TXN
+		SET
+				SETUP_VAL		= #{setupVal},
+				AMD_DT			= NOW()
+		WHERE
+				SVC_TGT_SEQ		= #{svcTgtSeq}
+		AND		SPOT_DEV_SEQ	= #{spotDevSeq}
+		AND		SNSN_TAG_CD		= #{snsnTagCd}
+	</update>
+
+	<!-- 일반 설정 삽입 -->
+	<insert id="insertSpotDevGenSetup">
+		INSERT INTO SPOT_DEV_GENL_SETUP_TXN (
+			SVC_TGT_SEQ,
+			SPOT_DEV_SEQ,
+			SNSN_TAG_CD,
+			SETUP_VAL,
+			DEL_YN,
+			CRET_DT
+		) VALUES (
+			#{svcTgtSeq},
+			#{spotDevSeq},
+			#{snsnTagCd},
+			#{setupVal},
+			'N',
+			NOW()
+		)
+	</insert>
+
+	<!-- 일반 설정 삭제 -->
+	<delete id="deleteSpotDevGenSetupByDevice">
+		DELETE
+		FROM	SPOT_DEV_GENL_SETUP_TXN
+		WHERE
+				SVC_TGT_SEQ		= #{svcTgtSeq}
+		AND		SPOT_DEV_SEQ	= #{spotDevSeq}
+	</delete>
+
+	<!-- 스케줄 설정 조회 -->
+	<select id="getSpotDevSchSetup" resultType="hashMap">
+		SELECT
+				SNSN_TAG_CD					AS "snsnTagCd",
+				SCDUL_SETUP_DOW_CD			AS "dowCd",
+				DOW_SEQ						AS "dowSeq",
+				ST_TIME						AS "stTime",
+				FNS_TIME					AS "fnsTime",
+				REC_CYCL_VAL				AS "perdTime",
+				REC_PERD_VAL				AS "duratTime",
+				DEL_YN						AS "delYn"
+		FROM
+				SPOT_DEV_SCDUL_SETUP_TXN
+		WHERE
+				SVC_TGT_SEQ		= #{svcTgtSeq}
+		AND		SPOT_DEV_SEQ	= #{spotDevSeq}
+		ORDER BY
+				SNSN_TAG_CD, SCDUL_SETUP_DOW_CD, DOW_SEQ
+	</select>
+
+	<!-- 스케줄 설정 삭제 -->
+	<delete id="deleteSpotDevSchSetupByDevice">
+		DELETE
+		FROM	SPOT_DEV_SCDUL_SETUP_TXN
+		WHERE
+				SVC_TGT_SEQ		= #{svcTgtSeq}
+		AND		SPOT_DEV_SEQ	= #{spotDevSeq}
+	</delete>
+
+	<!-- 스케줄 설정 삭제 -->
+	<delete id="deleteSpotDevSchSetup">
+		DELETE
+		FROM	SPOT_DEV_SCDUL_SETUP_TXN
+		WHERE
+				SVC_TGT_SEQ		= #{svcTgtSeq}
+		AND		SPOT_DEV_SEQ	= #{spotDevSeq}
+		AND		SNSN_TAG_CD		= #{snsnTagCd}
+	</delete>
+
+	<!-- 스케줄 설정 삽입 -->
+	<insert id="insertSpotDevSchSetup">
+		INSERT INTO SPOT_DEV_SCDUL_SETUP_TXN (
+			SVC_TGT_SEQ,
+			SPOT_DEV_SEQ,
+			SNSN_TAG_CD,
+			SCDUL_SETUP_DOW_CD,
+			DOW_SEQ,
+			ST_TIME,
+			FNS_TIME,
+			REC_CYCL_VAL,
+			REC_PERD_VAL,
+			DEL_YN,
+			CRET_DT
+		) VALUES (
+			#{svcTgtSeq},
+			#{spotDevSeq},
+			#{snsnTagCd},
+			#{dowCd},
+			1,
+			#{stTime},
+			#{fnsTime},
+			#{perdTime},
+			#{duratTime},
+			'N',
+			NOW()
+		)
+	</insert>
+	
+	<update id="updateSpotDevSchSetup">
+		UPDATE SPOT_DEV_SCDUL_SETUP_TXN 
+		   SET ST_TIME = #{stTime},
+		   	   FNS_TIME = #{fnsTime},
+		   	   REC_CYCL_VAL = #{perdTime},
+		   	   REC_PERD_VAL = #{duratTime}
+		 WHERE SVC_TGT_SEQ = #{svcTgtSeq}
+		   AND SPOT_DEV_SEQ = #{spotDevSeq}
+		   AND SNSN_TAG_CD = #{snsnTagCd}
+		   AND SCDUL_SETUP_DOW_CD = #{dowCd}
+		   AND DOW_SEQ = 1
+	</update>
+
+    <insert id="upsertSpotDevSchSetup" parameterType="java.util.List">
+        WITH schs (
+          scdul_setup_dow_cd,
+          dow_seq,
+          svc_tgt_seq,
+          spot_dev_seq,
+          snsn_tag_cd,
+          st_time,
+          fns_time,
+          del_yn,
+          cretr_id,
+          cret_dt,
+          amdr_id,
+          amd_dt,
+          rec_cycl_val,
+          rec_perd_val
+        ) AS (
+
+          VALUES
+          
+          <foreach item="item" collection="list" index="index" open="(" separator="),(" close=")">
+            #{item.dayOfWeekCd, jdbcType=INTEGER},
+            1,
+            #{item.svcTgtSeq, jdbcType=BIGINT},
+            #{item.spotDevSeq, jdbcType=BIGINT},
+            #{item.snsnTagCd, jdbcType=VARCHAR},
+            #{item.startTime, jdbcType=VARCHAR},
+            #{item.finishTime, jdbcType=VARCHAR},
+            'N',
+            NULL,
+            NOW(),
+            NULL,
+            NOW(),
+            #{item.periodTime, jdbcType=NUMERIC},
+            #{item.durationTime, jdbcType=NUMERIC}
+          </foreach>
+        ),
+        CRS AS (
+            SELECT
+                d.dow_cd as scdul_setup_dow_cd,
+                s.dow_seq,
+                s.svc_tgt_seq,
+                s.spot_dev_seq,
+                s.snsn_tag_cd
+            FROM (SELECT DISTINCT dow_seq, svc_tgt_seq, spot_dev_seq, snsn_tag_cd FROM schs) AS s CROSS JOIN generate_series(1, 7) AS d(dow_cd)
+        ),
+        INV AS (
+            SELECT scdul_setup_dow_cd, dow_seq, svc_tgt_seq, spot_dev_seq, snsn_tag_cd FROM
+                (SELECT 1 as ID, cast(scdul_setup_dow_cd as integer), cast(dow_seq as integer), cast(svc_tgt_seq as bigint), cast(spot_dev_seq as bigint), cast(snsn_tag_cd as varchar) FROM CRS UNION ALL
+                SELECT 2 as ID, cast(scdul_setup_dow_cd as integer), cast(dow_seq as integer), cast(svc_tgt_seq as bigint), cast(spot_dev_seq as bigint), cast(snsn_tag_cd as varchar) FROM schs) a
+            GROUP BY scdul_setup_dow_cd, dow_seq, svc_tgt_seq, spot_dev_seq, snsn_tag_cd
+            HAVING MAX(ID) = 1
+        ),
+        DELS AS (
+            UPDATE spot_dev_scdul_setup_txn origin
+                SET
+                    del_yn = 'Y',
+                    amd_dt = NOW()
+            FROM
+                schs, INV
+            WHERE
+                origin.scdul_setup_dow_cd = INV.scdul_setup_dow_cd
+                AND origin.dow_seq = INV.dow_seq
+                AND origin.svc_tgt_seq = INV.svc_tgt_seq
+                AND origin.spot_dev_seq = INV.spot_dev_seq
+                AND origin.snsn_tag_cd = INV.snsn_tag_cd
+        ),
+        UPSERT AS (
+            UPDATE spot_dev_scdul_setup_txn origin
+                SET
+                    st_time     = schs.st_time,
+                    fns_time    = schs.fns_time,
+                    del_yn      = 'N',
+                    rec_cycl_val = cast(schs.rec_cycl_val as numeric),
+                    rec_perd_val = cast(schs.rec_perd_val as numeric),
+                    amd_dt      = NOW()
+                FROM schs
+                WHERE
+                    origin.scdul_setup_dow_cd = schs.scdul_setup_dow_cd AND
+                    origin.dow_seq            = schs.dow_seq AND
+                    origin.svc_tgt_seq        = schs.svc_tgt_seq AND
+                    origin.spot_dev_seq       = schs.spot_dev_seq AND
+                    origin.snsn_tag_cd        = schs.snsn_tag_cd
+                RETURNING origin.*
+        )
+        INSERT INTO spot_dev_scdul_setup_txn (
+          scdul_setup_dow_cd,
+          dow_seq,
+          svc_tgt_seq,
+          spot_dev_seq,
+          snsn_tag_cd,
+          st_time,
+          fns_time,
+          del_yn,
+          cretr_id,
+          cret_dt,
+          amdr_id,
+          amd_dt,
+          rec_cycl_val,
+          rec_perd_val
+        )
+        SELECT
+          scdul_setup_dow_cd,
+          1,
+          svc_tgt_seq,
+          spot_dev_seq,
+          snsn_tag_cd,
+          st_time,
+          fns_time,
+          'N',
+          NULL,
+          NOW(),
+          NULL,
+          NOW(),
+          cast(rec_cycl_val as numeric),
+          cast(rec_perd_val as numeric)
+        FROM
+          schs
+        WHERE
+          NOT EXISTS (
+            SELECT 1
+            FROM
+              UPSERT up
+            WHERE
+              up.scdul_setup_dow_cd = schs.scdul_setup_dow_cd AND
+              up.dow_seq            = schs.dow_seq AND
+              up.svc_tgt_seq        = schs.svc_tgt_seq AND
+              up.spot_dev_seq       = schs.spot_dev_seq AND
+              up.snsn_tag_cd        = schs.snsn_tag_cd
+          )
+    </insert>
+
+	<!-- 트랜잭션 아이디 생성 -->
+	<select id="createTransactionId" resultType="string">
+		SELECT NEXTVAL('SEQ_CONTL_OCC_HST')::TEXT
+	</select>
+
+	<!-- 트랜잭션 정보 조회 -->
+	<select id="getTransaction" resultType="ControlTransaction">
+		SELECT
+			CONTL_TRANSAC_ID		AS "transactionId",		-- 제어트랜잭션아이디
+  			UNIT_SVC_CD				AS "unitSvcCode",		-- 단위서비스코드
+  			SVC_TGT_SEQ				AS "svcTgtSeq",			-- 서비스대상일련번호
+			SPOT_DEV_SEQ			AS "spotDevSeq",		-- 현장장치일련번호
+  			SNSN_TAG_DTL_CD			AS "snsnTagCd",			-- 센싱태그상세코드
+			RTIME_CONTL_YN			AS "rtimeControlYn",	-- 실시간제어여부
+			CONTL_OCCR_ID			AS "occrId",			-- 제어발생자아이디
+			CONTL_TRT_STTUS_CD		AS "statusCode",		-- 제어처리상태코드
+			CONTL_VAL				AS "controlValue",		-- 제어값
+			FNS_YN					AS "fnsYn"				-- 종료여부
+		FROM
+			CONTL_OCC_HST
+		WHERE
+			CONTL_TRANSAC_ID	= #{transactionId}
+	</select>
+
+	<!-- 트랜잭션 상태 조회 -->
+	<select id="getTransactionStatus" resultType="string">
+		SELECT
+			CONTL_TRT_STTUS_CD	-- 제어처리상태코드
+		FROM
+			CONTL_OCC_HST
+		WHERE
+			CONTL_TRANSAC_ID	= #{transactionId}
+	</select>
+
+	<!-- 트랜잭션 삽입 -->
+	<insert id="insertTransaction" parameterType="ControlTransaction">
+		INSERT INTO CONTL_OCC_HST (
+			CONTL_OCC_ID,		-- 제어발생아이디
+			CONTL_TRANSAC_ID,	-- 제어트랜잭션아이디
+			STTN_CONTL_ID,		-- 상황제어아이디
+			STAT_EVET_CD,		-- 상황이벤트코드
+  			UNIT_SVC_CD,		-- 단위서비스코드
+  			SVC_TGT_SEQ,		-- 서비스대상일련번호
+			SPOT_DEV_SEQ,		-- 현장장치일련번호
+  			SNSN_TAG_DTL_CD,	-- 센싱태그상세코드
+			RTIME_CONTL_YN,		-- 실시간제어여부
+			CONTL_OCCR_ID,		-- 제어발생자아이디
+			CONTL_TRT_STTUS_CD,	-- 제어처리상태코드
+			CONTL_VAL,			-- 제어값
+			FNS_YN,				-- 종료여부
+			OCC_DT				-- 발생일시
+		) VALUES (
+			#{transactionId},	-- 제어발생아이디
+			#{transactionId},	-- 제어트랜잭션아이디
+			'0',				-- 상황제어아이디
+			'0',				-- 상황이벤트코드
+			#{unitSvcCode},		-- 단위서비스코드
+			#{svcTgtSeq},		-- 서비스대상일련번호
+			#{spotDevSeq},		-- 현장장치일련번호
+			#{snsnTagCd},		-- 센싱태그상세코드
+			#{rtimeControlYn},	-- 실시간제어여부
+			#{occrId},			-- 제어발생자아이디
+			#{statusCode},		-- 제어처리상태코드
+			#{controlValue},	-- 제어값
+			'N',				-- 종료여부
+			now()
+		)
+	</insert>
+
+	<!-- 트랜잭션 결과 삽입 -->
+	<insert id="insertTransactionResult">
+		INSERT INTO TRANSAC_RESULT(
+			TRANSAC_ID,
+			TYPE,
+			RESULT,
+			CRET_DT
+		) VALUES (
+			#{transactionId},
+			#{type},
+			#{result},
+			now()
+		)
+	</insert>
+
+	<!-- 트랜잭션 결과 조회 -->
+	<select id="getTransactionResult" resultType="hashMap">
+		SELECT
+				RESULT			AS "result",
+				TYPE			AS "type"
+		FROM
+				TRANSAC_RESULT
+		WHERE
+				TRANSAC_ID = #{transactionId}
+		<if test="type != null and !type.isEmpty()">
+		AND		TYPE = #{type}
+		</if>
+	</select>
+
+	<!-- 트랜잭션 완료 처리 -->
+	<update id="finalizeTransaction">
+		UPDATE CONTL_OCC_HST SET
+			CONTL_TRT_STTUS_CD	= #{statusCode},
+			FNS_DT				= now(),
+			FNS_YN				= 'Y'
+		WHERE
+			CONTL_TRANSAC_ID	= #{transactionId}
+	</update>
+
+	<!-- 디바이스 이름 업데이트 -->
+	<update id="updateDeviceName" parameterType="string">
+		UPDATE SPOT_DEV_BAS SET
+			DEV_NM		= #{devNm}
+		WHERE
+			DEV_UU_ID	= #{devUUID}
+	</update>
+
+	<!-- expireTimeMinute 이내의 신규 접속 종료 장치 리스트 조회  -->
+	<select id="getNotCheckClosedSpotDevConnBas" resultType="hashMap">
+		<![CDATA[
+		SELECT
+				SVC_TGT_SEQ::bigint		AS "svcTgtSeq",
+				SPOT_DEV_SEQ::bigint	AS "spotDevSeq"
+		FROM
+				SPOT_DEV_CONN_BAS
+		WHERE
+				AMD_DT < CURRENT_TIMESTAMP - interval '${expireTimeMinute} minute'
+		AND		AMD_DT > CURRENT_TIMESTAMP - interval '120 minute'
+		AND		CONN_YN		= 'N'
+		AND		CHECK_YN	= 'N'
+		]]>
+	</select>
+
+	<!-- 장치 접속 상태 레코드 존재 체크 -->
+	<select id="getSpotDevConnBasCount" resultType="int">
+		SELECT
+				COUNT(1)		AS "count"
+		FROM
+				SPOT_DEV_CONN_BAS
+		WHERE
+				SVC_TGT_SEQ		= #{svcTgtSeq}
+		AND		SPOT_DEV_SEQ	= #{spotDevSeq}
+	</select>
+
+	<!-- 장치 접속 상태 삽입 -->
+	<insert id="insertSpotDevConnBas">
+		INSERT INTO SPOT_DEV_CONN_BAS (
+			SVC_TGT_SEQ,
+			SPOT_DEV_SEQ,
+			CONN_YN,
+			CHECK_YN,
+			CRET_DT,
+			AMD_DT
+		) VALUES (
+			#{svcTgtSeq},
+			#{spotDevSeq},
+			#{connYn},
+			'N',
+			NOW(),
+			NOW()
+		)
+	</insert>
+
+	<!-- 장치 접속 상태 업데이트 -->
+	<update id="updateSpotDevConnBas">
+		UPDATE
+				SPOT_DEV_CONN_BAS
+		SET
+				<if test="connYn != null and !connYn.isEmpty()">
+				CONN_YN			= #{connYn},
+				</if>
+				<if test="checkYn != null and !checkYn.isEmpty()">
+				CHECK_YN		= #{checkYn},
+				</if>
+				AMD_DT			= now()
+		WHERE
+				SVC_TGT_SEQ		= #{svcTgtSeq}
+		AND		SPOT_DEV_SEQ	= #{spotDevSeq}
+	</update>
+
+    <!-- get EnrollmentStatus -->
+    <select id="getEnrollmentStatus" resultType="EnrollmentStatus">
+        SELECT
+        CASE
+        WHEN conn.CONN_YN = 'Y' AND dev.dev_sttus_cd = '01' THEN 1
+        ELSE 0
+        END as connected,
+        CASE
+        WHEN svc.MBR_SEQ = #{mbrSeq} THEN 1
+        ELSE 0
+        END as "owned"
+        FROM
+        SPOT_DEV_EXPNSN_BAS expnsn,
+        SPOT_DEV_BAS dev,
+        SVC_TGT_BAS svc,
+        SPOT_DEV_CONN_BAS conn
+        WHERE
+        expnsn.SPOT_DEV_ITEM_NM = 'cctvMac'
+        AND expnsn.SPOT_DEV_ITEM_VAL = #{mac}
+        AND expnsn.SVC_TGT_SEQ = dev.SVC_TGT_SEQ
+        AND expnsn.SPOT_DEV_SEQ = dev.SPOT_DEV_SEQ
+        AND dev.SVC_TGT_SEQ = svc.SVC_TGT_SEQ
+        AND expnsn.SPOT_DEV_SEQ = conn.SPOT_DEV_SEQ
+        AND expnsn.SVC_TGT_SEQ = conn.SVC_TGT_SEQ
+        AND svc.OPRT_STTUS_CD = '0001'
+        AND svc.DEL_YN = 'N'
+        AND dev.DEL_YN = 'N'
+    </select>
+
+</mapper>

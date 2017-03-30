@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kt.giga.home.cms.customer.dao.GeneralNoticeDao">
+
+	<sql id="notice">
+		(
+			SELECT 
+				pk_notice AS "pk"
+			,	fk_cp_code AS "cpCode"
+			,	fd_admin_name AS "adminName"
+			,	fd_title AS "title"
+			,	fd_contents AS "contents"
+			,	fd_open_yn AS "openYN"
+			,	fd_writer_id AS "writerId"
+			,	n.fd_regdate AS "regDate" 
+			,	fd_preorder_yn  AS "preorderYN"
+			FROM tb_notice AS n 
+			LEFT OUTER JOIN (SELECT pk_admin_id, fd_admin_name FROM tb_admin) AS a 
+			ON n.fd_writer_id = a.pk_admin_id
+			WHERE n.fk_cp_code IN (SELECT fk_cp_code FROM tb_admin_svc WHERE fk_admin_id = #{id})
+		) AS notice 	
+			
+	</sql>
+
+	<sql id="where">
+	
+		<trim prefix="WHERE" prefixOverrides="AND || OR ">
+		
+			<if test="cpCode != null and cpCode != ''">
+				"cpCode" = #{cpCode}
+			</if>
+			<if test="searchColumn != null and searchColumn != null and searchString != null and searchString != ''">
+				AND "${searchColumn}" LIKE '%' || #{searchString} || '%'
+			</if>
+			<if test="openYnSelect != null and openYnSelect != ''">
+				AND "openYN" = #{openYnSelect}
+			</if>
+		</trim>	
+		
+	</sql>
+	
+	<select id="getCount" parameterType="Map" resultType="int">
+	
+		SELECT COUNT(pk) cnt 
+		FROM <include refid="notice"/> 
+		<include refid="where"/>
+		
+	</select>
+	
+	<select id="getPreorderCount" parameterType="String" resultType="int">
+	
+		SELECT COUNT(pk_notice) cnt FROM tb_notice 
+		WHERE fk_cp_code = #{value} AND fd_preorder_yn = 'Y'
+	
+	</select> 
+	
+	<select id="get" parameterType="Map" resultType="Map">
+	
+		SELECT 
+			"pk"
+		,	"cpCode"
+		,	"title"
+		,	"contents"
+		,	"openYN"
+		,	"writerId" 
+		FROM <include refid="notice"/>  
+		WHERE "pk" = #{pk} 
+		<if test="cpCode != null and cpCode != ''"> AND "cpCode" = #{cpCode}</if>
+	
+	</select>
+
+	<select id="getList" parameterType="Map" resultType="Map">
+	
+		SELECT * 
+		FROM (
+			SELECT * FROM <include refid="notice"/>
+			<include refid="where"/> 
+			ORDER BY CASE WHEN "preorderYN" = 'Y' THEN 100000000 + "pk" ELSE "pk" END DESC
+		) AS notice 
+		LIMIT ${pageSize} OFFSET (#{page} - 1) * #{pageSize}
+		
+	</select>
+	
+	<update id="updateOpenYN" parameterType="Map">
+	
+		UPDATE tb_notice SET fd_open_yn = #{openYN} 
+		WHERE pk_notice = #{pk} 
+		<if test="cpCode != null and cpCode != ''"> AND fk_cp_code = #{cpCode}</if>
+	
+	</update>
+	
+	<update id="updatePreorderYN" parameterType="Map">
+	
+		UPDATE tb_notice SET fd_preorder_yn = #{preorderYN} 
+		WHERE pk_notice = #{pk} 
+		<if test="cpCode != null and cpCode != ''"> AND fk_cp_code = #{cpCode}</if>	
+	
+	</update>
+	
+	<delete id="remove" parameterType="Map">
+	
+		DELETE FROM tb_notice 
+		WHERE pk_notice = #{pk}  	
+	
+	</delete>
+	
+	<insert id="register" parameterType="Map">
+	
+		INSERT INTO tb_notice(
+			fk_cp_code
+		,	fd_title
+		,	fd_contents
+		,	fd_open_yn
+		,	fd_writer_id
+		,	fd_writer_ip
+		,	fd_regdate
+		)
+		VALUES(
+			#{cpCode}
+		,	#{title}		
+		,	#{contents}		
+		,	#{openYN}		
+		,	#{writerId}		
+		,	#{writerIp}		
+		,	#{regDate}		
+		)
+	
+	</insert>
+	
+	<update id="modify" parameterType="Map">
+	
+		UPDATE tb_notice SET 
+			fd_title		=	#{title}
+		,	fd_contents		=	#{contents}
+		,	fd_open_yn		=	#{openYN}
+		,	fd_modifier_id	=	#{modifierId}
+		,	fd_modifier_ip	=	#{modifierIp}
+		,	fd_update_date	=	#{updateDate} 
+		WHERE pk_notice = #{pk}
+	
+	</update>
+
+</mapper>

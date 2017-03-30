@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kt.giga.home.openapi.cms.dao.CodeDao">
+
+	<select id="getCode" parameterType="string" resultType="Code">
+		SELECT 
+			*
+		FROM 
+			tb_code
+		WHERE 
+			pk_code	= #{code}
+			AND fd_use_yn	= 'Y'
+	</select>
+
+	<update id="updateCode"  parameterType="Code">
+		UPDATE tb_code
+		<set>			
+		     fd_name = #{fd_name}
+		     <if test="fd_use_yn !='' and fd_use_yn != null">	, fd_use_yn = #{fd_use_yn}</if>	
+		     <if test="fd_memo != null">						, fd_memo 	= #{fd_memo}</if>	
+		</set>
+		WHERE 
+			pk_code	= #{code}
+	</update>
+	
+	<select id="getCodeList" parameterType="String" resultType="Code">
+		SELECT 
+			*
+		FROM 
+			tb_code
+		WHERE 
+			fd_up_code = #{fd_up_code}
+			AND fd_use_yn	= 'Y'
+	</select>
+</mapper>
+
+

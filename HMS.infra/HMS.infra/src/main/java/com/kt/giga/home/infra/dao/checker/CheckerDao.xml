@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kt.giga.home.infra.dao.checker.CheckerDao">
+	
+	<!-- 홈 IoT 허브 리스트 조회 -->
+	<select id="getIotGwInfo" resultType="com.kt.giga.home.infra.domain.checker.IoTGWInfo">
+		SELECT
+			A.SVC_TGT_SEQ AS "svcTgtSeq"
+			, A.SPOT_DEV_SEQ AS "spotDevSeq"
+			, D.SPOT_DEV_ITEM_VAL AS "macAddress"
+			, C.TERML_MAKR_NM AS "manufacturer"
+			, A.RMARK AS "remark"
+		FROM SPOT_DEV_BAS A
+		, SVC_TGT_BAS B
+		, DEV_MODEL_BAS C
+		, SPOT_DEV_EXPNSN_BAS D
+		WHERE A.SVC_TGT_SEQ = B.SVC_TGT_SEQ
+		AND A.DEV_MODEL_SEQ = C.DEV_MODEL_SEQ
+		AND A.SVC_TGT_SEQ = D.SVC_TGT_SEQ
+		AND A.SPOT_DEV_SEQ = D.SPOT_DEV_SEQ
+		AND D.SPOT_DEV_ITEM_NM = 'gwMac'
+		AND B.SVC_TGT_TYPE_CD = '0000'
+		AND B.DSTR_CD = '001'
+		AND B.SVC_THEME_CD = 'HIT'
+		AND B.UNIT_SVC_CD = '003'
+		AND B.OPRT_STTUS_CD = '0001'
+		AND B.SVC_CONT_ID = #{inValue}
+		AND A.UP_SVC_TGT_SEQ IS NULL
+		AND A.UP_SPOT_DEV_SEQ IS NULL
+		AND A.USE_YN = 'Y'
+		AND A.DEL_YN = 'N'
+		AND C.DEL_YN = 'N'
+	</select>
+	
+	<!-- 홈 IoT 하위 단말 리스트 조회 -->
+	<select id="getIotDeviceInfo" resultType="com.kt.giga.home.infra.domain.checker.IoTDeviceInfo">
+		SELECT
+			A.SPOT_DEV_ID AS "deviceID"
+			, DEV_NM
+			, B.TERML_MAKR_NM AS "manufacturer"
+			, B.DEV_TYPE_CD AS "deviceType"
+			, CASE WHEN B.DEV_TYPE_CD = '1006' THEN
+				(SELECT
+					CASE WHEN SETUP_VAL = '00' THEN '02' ELSE '01' END
+				FROM SPOT_DEV_GENL_SETUP_TXN
+				WHERE SVC_TGT_SEQ = A.SVC_TGT_SEQ
+				AND SPOT_DEV_SEQ = A.SPOT_DEV_SEQ
+				AND SNSN_TAG_CD = '50992503'
+				AND DEL_YN = 'N')
+			  WHEN B.DEV_TYPE_CD IN ('4003', '0701') THEN
+				(SELECT
+					CASE WHEN SETUP_VAL = '0000000000' THEN '01' ELSE '02' END
+				FROM SPOT_DEV_GENL_SETUP_TXN
+				WHERE SVC_TGT_SEQ = A.SVC_TGT_SEQ
+				AND SPOT_DEV_SEQ = A.SPOT_DEV_SEQ
+				AND SNSN_TAG_CD = '50996203'
+				AND DEL_YN = 'N')
+			  ELSE NULL
+			  END AS "deviceStatus"
+			, COALESCE((SELECT SETUP_VAL FROM SPOT_DEV_GENL_SETUP_TXN WHERE SVC_TGT_SEQ = A.SVC_TGT_SEQ AND SPOT_DEV_SEQ = A.SPOT_DEV_SEQ AND SNSN_TAG_CD = '50998003' AND DEL_YN = 'N'),'0') AS "deviceBatteryStatus"
+			, CASE WHEN B.DEV_TYPE_CD = '1006' THEN
+				(SELECT TO_CHAR(COALESCE(AMD_DT, CRET_DT),'yyyy-mm-dd hh24:mi:ss') FROM SPOT_DEV_GENL_SETUP_TXN WHERE SVC_TGT_SEQ = A.SVC_TGT_SEQ AND SPOT_DEV_SEQ = A.SPOT_DEV_SEQ AND SNSN_TAG_CD = '50992503' AND DEL_YN = 'N')
+			  WHEN B.DEV_TYPE_CD IN ('4003', '0701') THEN
+				(SELECT TO_CHAR(COALESCE(AMD_DT, CRET_DT),'yyyy-mm-dd hh24:mi:ss') FROM SPOT_DEV_GENL_SETUP_TXN WHERE SVC_TGT_SEQ = A.SVC_TGT_SEQ AND SPOT_DEV_SEQ = A.SPOT_DEV_SEQ AND SNSN_TAG_CD = '50996203' AND DEL_YN = 'N')
+			  ELSE NULL
+			  END AS "lastRecvDate"
+		FROM SPOT_DEV_BAS A
+		, DEV_MODEL_BAS B
+		WHERE A.DEV_MODEL_SEQ = B.DEV_MODEL_SEQ
+		AND A.SVC_TGT_SEQ = #{svcTgtSeq}
+		AND A.UP_SVC_TGT_SEQ = #{svcTgtSeq}
+		AND A.UP_SPOT_DEV_SEQ = #{spotDevSeq}
+		AND A.USE_YN = 'Y'
+		AND A.DEL_YN = 'N'
+		AND B.DEL_YN = 'N'
+	</select>
+	
+	<!-- Olleh통합ID 조회 -->
+	<select id="getOllehID" resultType="com.kt.giga.home.infra.domain.checker.GetOllehIDResult">
+		SELECT A.MBR_ID AS "ollehId"
+		FROM MBR_BAS A, SVC_TGT_BAS B
+		WHERE A.MBR_SEQ		= B.MBR_SEQ
+		AND   B.DSTR_CD = '001'
+		AND   B.SVC_THEME_CD = 'HIT'
+		AND   B.UNIT_SVC_CD = '003'
+		AND   B.OPRT_STTUS_CD = '0001'
+		AND   B.SVC_CONT_ID = #{inValue}
+		
+	</select>
+
+</mapper>

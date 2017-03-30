@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kt.giga.home.openapi.health.otv.dao.OTVDao">
+
+	<select id="getService" parameterType="Map" resultType="Map">
+	
+		SELECT * FROM SVC_TGT_BAS WHERE oprt_sttus_cd = '0001' AND unit_svc_cd = #{unitSvcCd} AND svc_tgt_id = #{svcTgtId}
+	
+	</select>
+	
+	<select id="getDevice" parameterType="Map" resultType="Map">
+	
+		SELECT * FROM SPOT_DEV_BAS WHERE phys_dev_yn = 'N' AND svc_tgt_seq = #{svcTgtSeq} AND spot_dev_id = #{spotDevId}
+	
+	</select>
+
+</mapper>

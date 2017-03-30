@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kt.giga.home.cms.inquiry.dao.DeviceControlRecordDao">
+
+	<sql id="contlOccHst">
+	
+		(
+			SELECT 
+				contl_occr_id AS "contlOccrId"  	-- 제어발생이력 제어발생자아이디 (고객ID;전화번호)
+			,	unit_svc_cd AS "unitSvcCd" 			-- 서비스 코드
+			,	unit_svc_nm AS "unitSvcNm" 			-- 서비스 이름
+			,	snsn_tag_nm AS "snsnTagNm" 			-- 센싱태그코드기본 센싱태그명
+			,	snsn_tag_dtl_cd AS "snsnTagDtlCd"	-- 제어발생이력 센싱태그상세코드
+			,	spot_dev_id AS "spotDevId" 			-- 단말 ID
+			,	dev_nm AS "spotDevNm"  	   			-- 단말 닉네임
+			,	contl_val AS "contlVal"				-- 제어발생이력 제어값
+			,	occ_dt AS "occDt" 					-- 제어발생 일시
+			FROM (
+				SELECT 
+					contl_occr_id 	
+				,	coh.unit_svc_cd						
+				,	cd.unit_svc_nm
+				,	coh.spot_dev_seq
+				,	coh.svc_tgt_seq 
+				,	snsn_tag_dtl_cd
+				,	sdb.spot_dev_id
+				,	sdb.dev_nm	
+				,	contl_val
+				,	occ_dt  
+				FROM (
+					SELECT * 
+					FROM	contl_occ_hst 
+					WHERE	snsn_tag_dtl_cd IN (
+						'30000002'
+					,	'30000004'
+					,	'30000005'
+					,	'80000002'
+					,	'80000003'
+					,	'80000004'
+					,	'80000005'
+					,	'80000006'
+					,	'80000010'
+					,	'80000012'
+					,	'80000013'
+					,	'80000018'
+					,	'81000001'
+					,	'81000002' 
+					) 
+				) AS coh 
+				LEFT OUTER JOIN (
+					SELECT 
+						spot_dev_seq
+					,	svc_tgt_seq
+					,	spot_dev_id 
+					,	dev_nm
+					FROM spot_dev_bas 
+				) AS sdb
+				ON coh.spot_dev_seq = sdb.spot_dev_seq  
+				AND coh.svc_tgt_seq = sdb.svc_tgt_seq  	
+				LEFT OUTER JOIN (
+					SELECT 
+						fd_name AS unit_svc_cd
+					,	fd_memo AS unit_svc_nm
+					FROM tb_code 
+					WHERE fd_up_code = '1200' 
+				) AS cd 
+				ON coh.unit_svc_cd = cd.unit_svc_cd
+			) AS coh 
+			LEFT OUTER JOIN (
+				SELECT 
+					snsn_tag_cd
+				,	snsn_tag_nm
+				,	snsn_tag_desc
+				FROM snsn_tag_cd_bas
+			) AS stcb 
+			ON coh.snsn_tag_dtl_cd = stcb.snsn_tag_cd	
+		) AS contlOccHst
+			
+	</sql>
+	
+	<sql id="where">
+	
+		<trim prefix="WHERE" prefixOverrides="AND || OR ">
+			<if test="searchStartDate != null and searchStartDate != '' and searchEndDate != null and searchEndDate != ''">
+				AND "occDt" BETWEEN #{searchStartDate} AND #{searchEndDate} 
+			</if>
+			<if test="searchColumn != null and searchColumn != '' and searchString != null and searchString != ''">
+				<if test="searchColumn == 'spotDevId'">
+					AND "${searchColumn}" LIKE '%' || #{searchString} || '%'
+				</if>
+				<if test="searchColumn != 'spotDevId'">
+					AND "contlOccrId" LIKE '%' || #{searchString} || '%'
+				</if>
+			</if>
+			<if test="cpCode != null and cpCode != ''">
+				AND "unitSvcCd" = #{cpCode}
+			</if>
+			
+			<if test="searchSnsnTag != null and searchSnsnTag != ''">
+				AND "snsnTagDtlCd" LIKE '%' || #{searchSnsnTag} || '%'
+			</if>
+				
+			<if test="searchContlVal != null and searchContlVal != ''">
+				AND "contlVal" LIKE '%' || #{searchContlVal} || '%'
+			</if>
+			
+		</trim>	
+		
+	</sql>	
+	
+	<select id="getCount" parameterType="Map" resultType="int">
+	
+		SELECT COUNT(*) AS cnt 
+		FROM <include refid="contlOccHst"/> 
+		<include refid="where"/>
+	
+	</select>
+	
+	<select id="getList" parameterType="Map" resultType="Map">
+	
+		SELECT * 
+		FROM ( 
+			SELECT * FROM <include refid="contlOccHst"/> 
+			<include refid="where"/> 
+			ORDER BY "occDt" DESC
+		) AS coh 
+		<if test="page != null and page != '' and pageSize != null and pageSize != ''">LIMIT ${pageSize} OFFSET (#{page} - 1) * #{pageSize}</if>
+		<if test="page == null or page == '' or pageSize == null or pageSize == ''">LIMIT ${limitCount}</if>	
+	
+	</select>
+	
+	<select id="getSnsnTag" parameterType="Map" resultType="Map">
+	
+		SELECT 
+				snsn_tag_cd
+			,	snsn_tag_nm
+			,	snsn_tag_desc
+		FROM snsn_tag_cd_bas
+		WHERE snsn_tag_cd IN (
+				'30000002'
+			,	'30000004'
+			,	'30000005'
+			,	'80000002'
+			,	'80000003'
+			,	'80000004'
+			,	'80000005'
+			,	'80000006'
+			,	'80000010'
+			,	'80000012'
+			,	'80000013'
+			,	'80000018'
+			,	'81000001'
+			,	'81000002' 
+			)
+	
+	</select>
+
+</mapper>

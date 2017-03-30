@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- <mapper namespace="CMSLogParam"> -->
+<mapper namespace="com.kt.giga.home.cms.manager.dao.CMSLogParamDao">
+
+	<select id="getList" parameterType="int" resultType="HashMap">
+		SELECT * FROM TB_CMS_LOG_PARAM WHERE fk_cms_log = #{fk_cms_log} 
+		ORDER BY pk_cms_log_param ASC
+	</select>
+
+	<insert id="register" parameterType="HashMap">
+		INSERT INTO TB_CMS_LOG_PARAM
+		(
+	    	<!-- pk_cms_log_param -->
+	    	fk_cms_log
+	    ,	fd_param_name
+	    ,	fd_param_value
+	    ,	fd_param_index
+	    ,	fd_param_type			
+		)
+		VALUES
+		(
+			<!-- TB_CMS_LOG_PARAM_SEQ.NEXTVAL -->
+			#{fk_cms_log}	
+		,	#{fd_param_name}	
+		,	#{fd_param_value, jdbcType=VARCHAR}	
+		,	#{fd_param_index}	
+		,	#{fd_param_type}	
+		)
+	</insert>
+
+</mapper>

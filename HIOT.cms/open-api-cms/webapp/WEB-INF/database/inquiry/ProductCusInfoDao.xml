@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kt.giga.home.cms.inquiry.dao.ProductCusInfoDao">
+	
+	<sql id="where">
+		<trim prefix="WHERE" prefixOverrides="AND || OR ">
+			
+			<if test="searchColumn != null and searchColumn != '' and searchString != null and searchString != ''">
+				AND ${searchColumn} LIKE '%' || #{searchString} || '%'
+			</if>
+			<if test="cpCode != null and cpCode != ''">
+				AND stb.unit_svc_cd = #{cpCode}
+			</if>
+			<if test="status != null and status != ''">
+				AND oprt_sttus_cd = #{status}
+			</if>
+			
+			AND stb.unit_svc_cd IN (SELECT fk_cp_code as unit_svc_cd FROM tb_admin_svc WHERE fk_admin_id = #{id})
+			
+		</trim>	
+	</sql>
+	
+	<select id="getCount" parameterType="Map" resultType="int">
+	
+		SELECT COUNT(*) cnt
+		FROM (
+			SELECT stb.svc_tgt_seq 
+			FROM svc_tgt_bas AS stb 
+			LEFT OUTER JOIN mbr_bas AS mb 
+			ON  stb.mbr_seq = mb.mbr_seq  
+			LEFT OUTER JOIN (
+				SELECT 
+					mbr_seq
+				,	unit_svc_cd 
+				,	tel_no
+				FROM svc_tgt_conn_bas 
+			) AS stcb 
+			ON  stb.mbr_seq = stcb.mbr_seq 
+			AND stb.unit_svc_cd = stcb.unit_svc_cd 
+			LEFT JOIN (
+				SELECT 	
+					spot_dev_item_val AS dev_cctc_mac
+				,	svc_tgt_seq
+				FROM 	spot_dev_expnsn_bas 
+				WHERE spot_dev_item_nm='cctvMac'
+			) AS sdeb ON stb.svc_tgt_seq = sdeb.svc_tgt_seq
+			<include refid="where"/>
+			GROUP BY stb.svc_tgt_seq	
+		) productCusInfo
+	
+	</select>
+
+	<select id="getList" parameterType="Map" resultType="Map">
+	
+		SELECT
+			stb.svc_tgt_seq AS "svcTgtSeq" 
+		,	mb.mbr_id AS "mbrId"	
+		,	stb.unit_svc_cd AS "unitSvcCd"
+		,	stb.mbr_seq AS "mbrSeq"
+		,	unit_svc_nm AS "unitSvcNm" 
+		,	oprt_sttus_cd AS "oprtSttusCd" 
+		,	tel_no AS "telNo" 
+		,	tel_cnt AS "telCnt" 
+		,	stb.cret_dt AS "cretDt" 
+		FROM (
+			SELECT * 
+			FROM svc_tgt_bas 
+			WHERE svc_tgt_seq IN (
+				SELECT 
+					stb.svc_tgt_seq
+				FROM svc_tgt_bas AS stb 
+				LEFT OUTER JOIN mbr_bas AS mb 
+				ON  stb.mbr_seq = mb.mbr_seq  
+				LEFT OUTER JOIN (
+					SELECT 
+						mbr_seq
+					,	unit_svc_cd 
+					,	tel_no
+					FROM svc_tgt_conn_bas 
+				) AS stcb 
+				ON  stb.mbr_seq = stcb.mbr_seq 
+				AND stb.unit_svc_cd = stcb.unit_svc_cd 
+				LEFT JOIN (
+					SELECT 	
+						spot_dev_item_val AS dev_cctc_mac
+					,	svc_tgt_seq
+					FROM 	spot_dev_expnsn_bas 
+					WHERE spot_dev_item_nm='cctvMac'
+				) AS sdeb ON stb.svc_tgt_seq = sdeb.svc_tgt_seq
+				<include refid="where"/>
+				GROUP BY stb.svc_tgt_seq
+			) 	
+		) AS stb 
+		LEFT OUTER JOIN mbr_bas AS mb 
+		ON  stb.mbr_seq = mb.mbr_seq  
+		LEFT OUTER JOIN (
+			SELECT 
+				mbr_seq
+			,	unit_svc_cd 
+			,	MAX(tel_no) AS tel_no 
+			,	COUNT(tel_no) AS tel_cnt
+			FROM svc_tgt_conn_bas 
+			GROUP BY mbr_seq, unit_svc_cd 
+		) AS stcb 
+		ON  stb.mbr_seq = stcb.mbr_seq 
+		AND stb.unit_svc_cd = stcb.unit_svc_cd 
+		LEFT OUTER JOIN (
+			SELECT 
+				fd_name AS unit_svc_cd 
+			,	fd_memo AS unit_svc_nm
+			FROM tb_code 
+			WHERE fd_up_code = '1200'
+		) AS cd 
+		ON stb.unit_svc_cd = cd.unit_svc_cd 
+		ORDER BY mb.mbr_id ASC, stb.cret_dt DESC
+		LIMIT ${pageSize} OFFSET (#{page} - 1) * #{pageSize}
+	
+	</select>
+	
+	<select id="getSpotDevInfoList" parameterType="long" resultType="Map">
+	
+		SELECT 
+			cd.unit_svc_nm AS "unitSvcNm"
+		,	stb.oprt_sttus_cd AS "oprtSttusCd"
+		,	stb.svc_tgt_seq AS "svcTgtSeq"
+		,	sdb.dev_nm AS "devNm"
+		,	dmb.dev_model_nm AS "devModelNm"
+		,	sdb.frmwr_ver_no AS "frmwrVerNo" 
+		,	stb.cret_dt AS "cretDt"
+		FROM (
+			SELECT
+				svc_tgt_seq 
+			,	unit_svc_cd 
+			,	svc_cont_id 
+			,	oprt_sttus_cd 
+			,	cret_dt
+			FROM	svc_tgt_bas
+			WHERE	mbr_seq = #{mbrSeq} 
+		) AS stb 
+		INNER JOIN (
+			SELECT 
+				svc_tgt_seq 
+			,	spot_dev_id
+			,	dev_nm
+			,	frmwr_ver_no
+			,	dev_model_seq		
+			FROM	spot_dev_bas 	
+		) AS sdb 
+		ON stb.svc_tgt_seq = sdb.svc_tgt_seq 
+		LEFT OUTER JOIN (
+			SELECT 
+				dev_model_seq
+			,	dev_model_nm
+			FROM	dev_model_bas 
+		) AS dmb  
+		ON sdb.dev_model_seq = dmb.dev_model_seq 
+		LEFT OUTER JOIN (
+			SELECT 
+				fd_name AS unit_svc_cd 
+			,	fd_memo AS unit_svc_nm
+			FROM tb_code 
+			WHERE fd_up_code = '1200'
+		) AS cd 
+		ON stb.unit_svc_cd = cd.unit_svc_cd 
+	
+	</select>
+	
+	<select id="getTermlInfoList" parameterType="long" resultType="Map">
+	
+		SELECT 
+			mb.mbr_seq AS "mbrSeq"	-- 회원일련번호 
+		,	mb.mbr_id AS "mbrId" 	-- 회원아이디
+		,	stcb.tel_no AS "telNo"	-- 전화번호
+		FROM (
+			SELECT 
+				mbr_seq 
+			,	mbr_id  
+			FROM mbr_bas 		
+			WHERE  	mbr_seq = #{mbrSeq} 
+		) AS mb 
+		INNER JOIN (
+			SELECT 
+				mbr_seq
+			,	tel_no
+			FROM	svc_tgt_conn_bas 
+			WHERE  	mbr_seq = #{mbrSeq}			
+		) AS stcb 
+		ON mb.mbr_seq = stcb.mbr_seq 
+		
+	</select>
+	
+</mapper>

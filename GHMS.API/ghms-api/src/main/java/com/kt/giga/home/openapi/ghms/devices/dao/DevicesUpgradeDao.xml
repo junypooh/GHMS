@@ -1,0 +1,357 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kt.giga.home.openapi.ghms.devices.dao.DevicesUpgradeDao">
+
+	
+	<!-- 게이트웨이 정보 조회 -->
+	<select id="selectSpotGateWayList" resultType="com.kt.giga.home.openapi.ghms.devices.domain.vo.DeviceGw">
+		SELECT
+			A.SVC_TGT_SEQ::bigint 		AS "svcTgtSeq"
+			, A.SPOT_DEV_SEQ::bigint 	AS "spotDevSeq"
+			, A.UP_SVC_TGT_SEQ::bigint 	AS "upSvcTgtSeq"
+			, A.UP_SPOT_DEV_SEQ 		AS "upGwCnctId"
+			, '' 						AS "upSpotDevId"
+			, C.UNIT_SVC_CD 			AS "unitSvcCd"
+			, A.DEV_NM 					AS "spotDevNm"
+			, ''						AS "subsSttusCd"
+			, '' 						AS "subsSttusCd"
+			, B.TERML_MAKR_NM 			AS "makrNm"
+			, B.DEV_MODEL_NM 			AS "modelNm"
+			, A.PROD_SEQ 				AS "prodSeq"
+			, A.REG_SEQ 				AS "regSeq"
+			, A.FRMWR_VER_NO 			AS "frmwrVerNo"
+			, C.OPRT_STTUS_CD 			AS "oprtSttusCd"
+			, A.DEV_STTUS_CD 			AS "devSttusCd"
+			, C.SVC_CONT_ID				AS "svcContId"
+			, A.TMP_DEV_YN				AS "tmpDevYn"
+			, CASE WHEN
+				(SELECT COUNT(1) FROM SVC_TGT_BAS
+				WHERE SVC_TGT_SEQ = A.SVC_TGT_SEQ AND MBR_SEQ = #{mbrSeq}
+				AND DSTR_CD = #{dstrCd}
+				AND SVC_THEME_CD = #{svcThemeCd}
+				AND UNIT_SVC_CD = #{unitSvcCd}
+				AND OPRT_STTUS_CD = '0001') > 0 THEN 'M' ELSE 'S' END AS "isMaster"
+			, (SELECT SPOT_DEV_ITEM_VAL FROM SPOT_DEV_EXPNSN_BAS WHERE SVC_TGT_SEQ = A.SVC_TGT_SEQ AND SPOT_DEV_SEQ = A.SPOT_DEV_SEQ AND SPOT_DEV_ITEM_NM = 'gwSerial') AS "gwSerial"
+			, (SELECT SPOT_DEV_ITEM_VAL FROM SPOT_DEV_EXPNSN_BAS WHERE SVC_TGT_SEQ = A.SVC_TGT_SEQ AND SPOT_DEV_SEQ = A.SPOT_DEV_SEQ AND SPOT_DEV_ITEM_NM = 'gwMac') AS "gwMac"
+			, ipadr						AS "deviceIpAddr"
+		FROM SPOT_DEV_BAS A
+		, DEV_MODEL_BAS B
+		, SVC_TGT_BAS C
+		WHERE A.DEV_MODEL_SEQ = B.DEV_MODEL_SEQ
+		AND A.SVC_TGT_SEQ = C.SVC_TGT_SEQ
+		AND B.DEV_TYPE_CD = #{devTypeCd}
+		AND A.USE_YN = 'Y'
+		AND A.DEL_YN = 'N'
+		AND B.DEL_YN = 'N'
+		AND	A.UP_SVC_TGT_SEQ  IS NULL
+		AND	A.UP_SPOT_DEV_SEQ IS NULL
+		<if test="spotDevSeq != null and spotDevSeq gt 0">
+		AND	A.SPOT_DEV_SEQ = #{spotDevSeq}
+		</if>
+		<if test="svcTgtSeq != null and svcTgtSeq gt 0">
+		AND A.SVC_TGT_SEQ = #{svcTgtSeq}
+		</if>
+		AND A.SVC_TGT_SEQ IN (
+		
+			SELECT
+				SVC_TGT_SEQ
+			FROM SVC_TGT_BAS
+			WHERE MBR_SEQ = #{mbrSeq}
+			AND DSTR_CD = #{dstrCd}
+			AND SVC_THEME_CD = #{svcThemeCd}
+			AND UNIT_SVC_CD = #{unitSvcCd}
+			AND OPRT_STTUS_CD = '0001'
+			UNION ALL
+			SELECT
+				A.SVC_TGT_SEQ
+			FROM SVC_ETS_REL A
+			, SVC_MBR_REL B
+			, SVC_TGT_BAS C
+			WHERE A.MBR_SEQ = B.MBR_SEQ
+			AND B.MBR_SEQ = C.MBR_SEQ
+			AND A.DSTR_CD = B.DSTR_CD
+			AND B.DSTR_CD = C.DSTR_CD
+			AND A.SVC_THEME_CD = B.SVC_THEME_CD
+			AND B.SVC_THEME_CD = C.SVC_THEME_CD
+			AND A.UNIT_SVC_CD = B.UNIT_SVC_CD
+			AND B.UNIT_SVC_CD = C.UNIT_SVC_CD
+			AND A.SVC_TGT_SEQ = C.SVC_TGT_SEQ
+			AND A.ETS_MBR_SEQ = #{mbrSeq}
+			AND A.DSTR_CD = #{dstrCd}
+			AND A.SVC_THEME_CD = #{svcThemeCd}
+			AND A.UNIT_SVC_CD = #{unitSvcCd}
+			AND C.OPRT_STTUS_CD = '0001'
+		
+		)
+		<if test='devTypeCd != null and devTypeCd eq "G000"'>
+		AND EXISTS (SELECT 1 FROM MBR_SPOT_DEV_SETUP_TXN
+				WHERE MBR_SEQ = #{mbrSeq}
+				AND DSTR_CD = C.DSTR_CD
+				AND SVC_THEME_CD = C.SVC_THEME_CD
+				AND UNIT_SVC_CD = C.UNIT_SVC_CD
+				AND SVC_TGT_SEQ = C.SVC_TGT_SEQ
+				AND SPOT_DEV_SEQ = A.SPOT_DEV_SEQ
+				AND GROUP_SETUP_CD = 'A902'
+				AND SETUP_CD = '003'
+				AND SETUP_VAL = 'Y')
+		</if>
+	</select>
+	
+	<!-- 현장장치 정보 조회 -->
+	<select id="selectSpotDevList" resultType="com.kt.giga.home.openapi.ghms.devices.domain.vo.Device">
+		SELECT
+			A.SVC_TGT_SEQ			AS "svcTgtSeq"
+			, A.SPOT_DEV_SEQ		AS "spotDevSeq"
+			, A.UP_SPOT_DEV_SEQ		AS "gwCnctId"
+			, (
+				SELECT SPOT_DEV_ID FROM SPOT_DEV_BAS
+				WHERE SVC_TGT_SEQ = A.UP_SVC_TGT_SEQ
+				AND SPOT_DEV_SEQ = A.UP_SPOT_DEV_SEQ
+			)						AS "upSpotDevId"
+			, A.DEV_NM				AS "spotDevNm"
+			, B.TERML_MAKR_NM		AS "makrNm"
+			, B.DEV_MODEL_NM		AS "modelNm"
+			, A.PROD_SEQ			AS "prodSeq"
+			, A.REG_SEQ 			AS "regSeq"
+			, A.FRMWR_VER_NO		AS "frmwrVerNo"
+			, C.OPRT_STTUS_CD		AS "oprtSttusCd"
+			, A.DEV_STTUS_CD		AS "devSttusCd"
+			, ''					AS "svcContId"
+			, A.SPOT_DEV_ID			AS "spotDevId"
+			, A.UP_SVC_TGT_SEQ		AS "upSvcTgtSeq"
+			, A.UP_SPOT_DEV_SEQ		AS "upSpotDevSeq"
+			, B.DEV_TYPE_CD			AS "spotGroupCd"
+			, (SELECT SPOT_DEV_ITEM_VAL FROM SPOT_DEV_EXPNSN_BAS WHERE SVC_TGT_SEQ = A.SVC_TGT_SEQ AND SPOT_DEV_SEQ = A.SPOT_DEV_SEQ AND SPOT_DEV_ITEM_NM = 'devMac') AS "spotDevMac"
+			, '0'					AS "onOff"
+			, 'N'					AS "mngDevYn"
+		FROM SPOT_DEV_BAS A
+		, DEV_MODEL_BAS B
+		, SVC_TGT_BAS C
+		WHERE A.DEV_MODEL_SEQ = B.DEV_MODEL_SEQ
+		AND A.SVC_TGT_SEQ = C.SVC_TGT_SEQ
+		AND A.USE_YN = 'Y'
+		AND A.DEL_YN = 'N'
+		AND B.DEL_YN = 'N'
+		AND	A.UP_SVC_TGT_SEQ  IS NOT NULL
+		AND	A.UP_SPOT_DEV_SEQ IS NOT NULL
+		<if test="gateWaySpotDevSeq != null and gateWaySpotDevSeq gt 0">
+		AND A.UP_SVC_TGT_SEQ = #{svcTgtSeq}
+		AND A.UP_SPOT_DEV_SEQ = #{gateWaySpotDevSeq}
+		</if>
+		<if test="spotDevSeq != null and spotDevSeq gt 0">
+		AND A.SPOT_DEV_SEQ = #{spotDevSeq}
+		</if>
+		<if test="svcTgtSeq != null and svcTgtSeq gt 0">
+		AND A.SVC_TGT_SEQ = #{svcTgtSeq}
+		</if>
+		<if test='devTypeCd != null and devTypeCd neq "G000"'>
+		AND EXISTS (SELECT 1 FROM MBR_SPOT_DEV_SETUP_TXN
+				WHERE MBR_SEQ = #{mbrSeq}
+				AND DSTR_CD = C.DSTR_CD
+				AND SVC_THEME_CD = C.SVC_THEME_CD
+				AND UNIT_SVC_CD = C.UNIT_SVC_CD
+				AND SVC_TGT_SEQ = C.SVC_TGT_SEQ
+				AND SPOT_DEV_SEQ = A.SPOT_DEV_SEQ
+				AND GROUP_SETUP_CD = 'A902'
+				AND SETUP_CD = '003'
+				AND SETUP_VAL = 'Y')
+		</if>
+		ORDER BY SPOT_DEV_SEQ
+	</select>
+	
+	<!-- 현장장치 정보 조회 -->
+	<select id="selectSpotDevListFilter" resultType="com.kt.giga.home.openapi.ghms.devices.domain.vo.Device">
+		SELECT
+			A.SVC_TGT_SEQ			AS "svcTgtSeq"
+			, A.SPOT_DEV_SEQ		AS "spotDevSeq"
+			, A.UP_SPOT_DEV_SEQ		AS "gwCnctId"
+			, (
+				SELECT SPOT_DEV_ID FROM SPOT_DEV_BAS
+				WHERE SVC_TGT_SEQ = A.UP_SVC_TGT_SEQ
+				AND SPOT_DEV_SEQ = A.UP_SPOT_DEV_SEQ
+			)						AS "upSpotDevId"
+			, A.DEV_NM				AS "spotDevNm"
+			, B.TERML_MAKR_NM		AS "makrNm"
+			, B.DEV_MODEL_NM		AS "modelNm"
+			, A.PROD_SEQ			AS "prodSeq"
+			, A.REG_SEQ 			AS "regSeq"
+			, A.FRMWR_VER_NO		AS "frmwrVerNo"
+			, C.OPRT_STTUS_CD		AS "oprtSttusCd"
+			, A.DEV_STTUS_CD		AS "devSttusCd"
+			, ''					AS "svcContId"
+			, A.SPOT_DEV_ID			AS "spotDevId"
+			, A.UP_SVC_TGT_SEQ		AS "upSvcTgtSeq"
+			, A.UP_SPOT_DEV_SEQ		AS "upSpotDevSeq"
+			, B.DEV_TYPE_CD			AS "spotGroupCd"
+			, (SELECT SPOT_DEV_ITEM_VAL FROM SPOT_DEV_EXPNSN_BAS WHERE SVC_TGT_SEQ = A.SVC_TGT_SEQ AND SPOT_DEV_SEQ = A.SPOT_DEV_SEQ AND SPOT_DEV_ITEM_NM = 'devMac') AS "spotDevMac"
+			, '0'					AS "onOff"
+			, 'Y'					AS "mngDevYn"
+		FROM SPOT_DEV_BAS A
+		, DEV_MODEL_BAS B
+		, SVC_TGT_BAS C
+		WHERE A.DEV_MODEL_SEQ = B.DEV_MODEL_SEQ
+		AND A.SVC_TGT_SEQ = C.SVC_TGT_SEQ
+		AND A.USE_YN = 'Y'
+		AND A.DEL_YN = 'N'
+		AND B.DEL_YN = 'N'
+		AND	A.UP_SVC_TGT_SEQ  IS NOT NULL
+		AND	A.UP_SPOT_DEV_SEQ IS NOT NULL
+		<if test="gateWaySpotDevSeq != null and gateWaySpotDevSeq gt 0">
+		AND A.UP_SVC_TGT_SEQ = #{svcTgtSeq}
+		AND A.UP_SPOT_DEV_SEQ = #{gateWaySpotDevSeq}
+		</if>
+		<if test="spotDevSeq != null and spotDevSeq gt 0">
+		AND A.SPOT_DEV_SEQ = #{spotDevSeq}
+		</if>
+		<if test="svcTgtSeq != null and svcTgtSeq gt 0">
+		AND A.SVC_TGT_SEQ = #{svcTgtSeq}
+		</if>
+		<if test='devTypeCd != null and devTypeCd neq "G000"'>
+		AND EXISTS (SELECT 1 FROM MBR_SPOT_DEV_SETUP_TXN
+				WHERE MBR_SEQ = #{mbrSeq}
+				AND DSTR_CD = C.DSTR_CD
+				AND SVC_THEME_CD = C.SVC_THEME_CD
+				AND UNIT_SVC_CD = C.UNIT_SVC_CD
+				AND SVC_TGT_SEQ = C.SVC_TGT_SEQ
+				AND SPOT_DEV_SEQ = A.SPOT_DEV_SEQ
+				AND GROUP_SETUP_CD = 'A902'
+				AND SETUP_CD = '003'
+				AND SETUP_VAL = 'Y')
+		</if>
+		<if test="macAddrArray != null">
+		AND NOT EXISTS (SELECT 1 FROM SPOT_DEV_EXPNSN_BAS
+						WHERE SVC_TGT_SEQ = A.SVC_TGT_SEQ
+						AND SPOT_DEV_SEQ = A.SPOT_DEV_SEQ
+						AND SPOT_DEV_ITEM_NM = 'devMac'
+						AND SPOT_DEV_ITEM_VAL IN
+						<foreach item="item" index="index" collection="macAddrArray" open="(" separator="," close=")">
+								#{item}
+						</foreach>
+		)
+		</if>
+		ORDER BY SPOT_DEV_SEQ
+	</select>
+	
+	<!-- AP 하위 현장장치 정보 조회 -->
+	<select id="selectSpotDevBasByDevMac" resultType="com.kt.giga.home.openapi.ghms.devices.domain.vo.Device">
+		SELECT
+			A.SVC_TGT_SEQ			AS "svcTgtSeq"
+			, A.SPOT_DEV_SEQ		AS "spotDevSeq"
+			, A.UP_SPOT_DEV_SEQ		AS "gwCnctId"
+			, (
+				SELECT SPOT_DEV_ID FROM SPOT_DEV_BAS
+				WHERE SVC_TGT_SEQ = A.UP_SVC_TGT_SEQ
+				AND SPOT_DEV_SEQ = A.UP_SPOT_DEV_SEQ
+			)						AS "upSpotDevId"
+			, A.DEV_NM				AS "spotDevNm"
+			, B.TERML_MAKR_NM		AS "makrNm"
+			, B.DEV_MODEL_NM		AS "modelNm"
+			, A.PROD_SEQ			AS "prodSeq"
+			, A.REG_SEQ 			AS "regSeq"
+			, A.FRMWR_VER_NO		AS "frmwrVerNo"
+			, C.OPRT_STTUS_CD		AS "oprtSttusCd"
+			, A.DEV_STTUS_CD		AS "devSttusCd"
+			, ''					AS "svcContId"
+			, A.SPOT_DEV_ID			AS "spotDevId"
+			, A.UP_SVC_TGT_SEQ		AS "upSvcTgtSeq"
+			, A.UP_SPOT_DEV_SEQ		AS "upSpotDevSeq"
+			, B.DEV_TYPE_CD			AS "spotGroupCd"
+			, D.SPOT_DEV_ITEM_VAL	AS "spotDevMac"
+			, '0'					AS "onOff"
+			, 'Y'					AS "mngDevYn"
+		FROM SPOT_DEV_BAS A
+		, DEV_MODEL_BAS B
+		, SVC_TGT_BAS C
+		, SPOT_DEV_EXPNSN_BAS D
+		WHERE A.DEV_MODEL_SEQ = B.DEV_MODEL_SEQ
+		AND A.SVC_TGT_SEQ = C.SVC_TGT_SEQ
+		AND A.SVC_TGT_SEQ = D.SVC_TGT_SEQ
+		AND A.SPOT_DEV_SEQ = D.SPOT_DEV_SEQ
+		AND D.SPOT_DEV_ITEM_NM = 'devMac'
+		AND A.USE_YN = 'Y'
+		AND A.DEL_YN = 'N'
+		AND B.DEL_YN = 'N'
+		AND	A.UP_SVC_TGT_SEQ  IS NOT NULL
+		AND	A.UP_SPOT_DEV_SEQ IS NOT NULL
+		AND A.SVC_TGT_SEQ = #{svcTgtSeq}
+		<if test="spotDevSeq != null">
+		AND A.SPOT_DEV_SEQ = #{spotDevSeq}
+		</if>
+		AND D.SPOT_DEV_ITEM_VAL = #{hostMacAddress}
+	</select>
+	
+	<!-- GW 현장장치 정보 조회 -->
+	<select id="selectSpotDevBasByGwMac" resultType="com.kt.giga.home.openapi.ghms.devices.domain.vo.Device">
+		SELECT
+			A.SVC_TGT_SEQ			AS "svcTgtSeq"
+			, A.SPOT_DEV_SEQ		AS "spotDevSeq"
+			, A.UP_SPOT_DEV_SEQ		AS "gwCnctId"
+			, (
+				SELECT SPOT_DEV_ID FROM SPOT_DEV_BAS
+				WHERE SVC_TGT_SEQ = A.UP_SVC_TGT_SEQ
+				AND SPOT_DEV_SEQ = A.UP_SPOT_DEV_SEQ
+			)						AS "upSpotDevId"
+			, A.DEV_NM				AS "spotDevNm"
+			, B.TERML_MAKR_NM		AS "makrNm"
+			, B.DEV_MODEL_NM		AS "modelNm"
+			, A.PROD_SEQ			AS "prodSeq"
+			, A.REG_SEQ 			AS "regSeq"
+			, A.FRMWR_VER_NO		AS "frmwrVerNo"
+			, C.OPRT_STTUS_CD		AS "oprtSttusCd"
+			, A.DEV_STTUS_CD		AS "devSttusCd"
+			, ''					AS "svcContId"
+			, A.SPOT_DEV_ID			AS "spotDevId"
+			, A.UP_SVC_TGT_SEQ		AS "upSvcTgtSeq"
+			, A.UP_SPOT_DEV_SEQ		AS "upSpotDevSeq"
+			, B.DEV_TYPE_CD			AS "spotGroupCd"
+			, D.SPOT_DEV_ITEM_VAL	AS "spotDevMac"
+			, '0'					AS "onOff"
+			, 'N'					AS "mngDevYn"
+		FROM SPOT_DEV_BAS A
+		, DEV_MODEL_BAS B
+		, SVC_TGT_BAS C
+		, SPOT_DEV_EXPNSN_BAS D
+		WHERE A.DEV_MODEL_SEQ = B.DEV_MODEL_SEQ
+		AND A.SVC_TGT_SEQ = C.SVC_TGT_SEQ
+		AND A.SVC_TGT_SEQ = D.SVC_TGT_SEQ
+		AND A.SPOT_DEV_SEQ = D.SPOT_DEV_SEQ
+		AND D.SPOT_DEV_ITEM_NM = 'gwMac'
+		AND A.USE_YN = 'Y'
+		AND A.DEL_YN = 'N'
+		AND A.TMP_DEV_YN = 'N'
+		AND B.DEL_YN = 'N'
+		AND D.SPOT_DEV_ITEM_VAL = #{gwMacAddress}
+		AND A.SVC_TGT_SEQ IN (
+			SELECT
+				SVC_TGT_SEQ
+			FROM SVC_TGT_BAS
+			WHERE MBR_SEQ = #{mbrSeq}
+			AND DSTR_CD = #{dstrCd}
+			AND SVC_THEME_CD = #{svcThemeCd}
+			AND UNIT_SVC_CD = #{unitSvcCd}
+			AND OPRT_STTUS_CD = '0001'
+			UNION ALL
+			SELECT
+				A.SVC_TGT_SEQ
+			FROM SVC_ETS_REL A
+			, SVC_MBR_REL B
+			, SVC_TGT_BAS C
+			WHERE A.MBR_SEQ = B.MBR_SEQ
+			AND B.MBR_SEQ = C.MBR_SEQ
+			AND A.DSTR_CD = B.DSTR_CD
+			AND B.DSTR_CD = C.DSTR_CD
+			AND A.SVC_THEME_CD = B.SVC_THEME_CD
+			AND B.SVC_THEME_CD = C.SVC_THEME_CD
+			AND A.UNIT_SVC_CD = B.UNIT_SVC_CD
+			AND B.UNIT_SVC_CD = C.UNIT_SVC_CD
+			AND A.SVC_TGT_SEQ = C.SVC_TGT_SEQ
+			AND A.ETS_MBR_SEQ = #{mbrSeq}
+			AND A.DSTR_CD = #{dstrCd}
+			AND A.SVC_THEME_CD = #{svcThemeCd}
+			AND A.UNIT_SVC_CD = #{unitSvcCd}
+			AND C.OPRT_STTUS_CD = '0001'
+		)
+	</select>
+
+</mapper>

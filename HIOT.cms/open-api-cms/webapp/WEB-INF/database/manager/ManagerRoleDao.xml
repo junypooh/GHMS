@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kt.giga.home.cms.manager.dao.ManagerRoleDao">
+
+	<select id="getListByID" parameterType="String" resultType="Map">
+
+		SELECT * FROM tb_admin_role WHERE fk_admin_id = #{value}	
+	
+	</select>
+	
+	<insert id="register" parameterType="Map">
+	
+		INSERT INTO tb_admin_role (
+			fk_admin_id
+		,	fk_role
+		)
+		VALUES (
+			#{id}
+		,	#{role}
+		)
+	
+	</insert>
+	
+	<delete id="remove" parameterType="Map">
+	
+		DELETE FROM tb_admin_role 
+		<trim prefix="WHERE" prefixOverrides="AND || OR">
+			<if test="id != null and id != ''">AND fk_admin_id = #{id}</if>
+			<if test="role != null and role != 0">AND fk_role = #{role}</if>
+		</trim>
+				
+	</delete>	
+	
+</mapper>

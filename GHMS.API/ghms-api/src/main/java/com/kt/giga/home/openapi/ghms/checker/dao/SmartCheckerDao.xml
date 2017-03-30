@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kt.giga.home.openapi.ghms.checker.dao.SmartCheckerDao">
+	
+	<!-- 홈 IoT 허브 정보 조회 -->
+	<select id="getIotInfoSvcContId" resultType="com.kt.giga.home.openapi.ghms.devices.domain.vo.DeviceGw">
+		SELECT
+			A.SVC_TGT_SEQ AS "svcTgtSeq"
+			, A.SPOT_DEV_SEQ AS "spotDevSeq"
+			, (SELECT SPOT_DEV_ITEM_VAL FROM SPOT_DEV_EXPNSN_BAS WHERE SVC_TGT_SEQ = A.SVC_TGT_SEQ AND SPOT_DEV_SEQ = A.SPOT_DEV_SEQ AND SPOT_DEV_ITEM_NM = 'gwMac') AS "gwMac"
+		FROM SPOT_DEV_BAS A
+		, SVC_TGT_BAS B
+		WHERE A.SVC_TGT_SEQ = B.SVC_TGT_SEQ
+		AND B.SVC_TGT_TYPE_CD = #{svcTgtTypeCd}
+		AND B.DSTR_CD = '001'
+		AND B.SVC_THEME_CD = 'HIT'
+		AND B.UNIT_SVC_CD = '003'
+		AND B.OPRT_STTUS_CD = '0001'
+		AND B.SVC_CONT_ID = #{svcContId}
+		AND A.UP_SVC_TGT_SEQ IS NULL
+		AND A.UP_SPOT_DEV_SEQ IS NULL
+		AND A.USE_YN = 'Y'
+		AND A.DEL_YN = 'N'
+	</select>
+	
+	<!-- 홈 IoT 하위 단말 리스트 조회 -->
+	<select id="getIotDeviceInfo" resultType="com.kt.giga.home.openapi.ghms.checker.domain.vo.IoTDeviceInfo">
+		SELECT
+			A.SPOT_DEV_ID AS "deviceID"
+			, B.DEV_TYPE_CD AS "deviceType"
+			, (SELECT TO_CHAR(COALESCE(AMD_DT, CRET_DT),'yyyy-mm-dd hh24:mi:ss') FROM SPOT_DEV_GENL_SETUP_TXN WHERE SVC_TGT_SEQ = A.SVC_TGT_SEQ AND SPOT_DEV_SEQ = A.SPOT_DEV_SEQ AND SNSN_TAG_CD = '82000001' AND DEL_YN = 'N') AS "lastRecvDate"
+			, COALESCE((SELECT SETUP_VAL FROM SPOT_DEV_GENL_SETUP_TXN WHERE SVC_TGT_SEQ = A.SVC_TGT_SEQ AND SPOT_DEV_SEQ = A.SPOT_DEV_SEQ AND SNSN_TAG_CD = '82000001' AND DEL_YN = 'N'), '00') AS "connStatus"
+		FROM SPOT_DEV_BAS A
+		, DEV_MODEL_BAS B
+		WHERE A.DEV_MODEL_SEQ = B.DEV_MODEL_SEQ
+		AND A.SVC_TGT_SEQ = #{svcTgtSeq}
+		AND A.UP_SPOT_DEV_SEQ = #{spotDevSeq}
+		AND A.USE_YN = 'Y'
+		AND A.DEL_YN = 'N'
+		AND B.DEL_YN = 'N'
+	</select>
+	
+</mapper>

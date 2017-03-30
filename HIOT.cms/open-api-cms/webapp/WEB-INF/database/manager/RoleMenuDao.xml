@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kt.giga.home.cms.manager.dao.RoleMenuDao">
+
+	<sql id="rolemenu">
+	
+		(
+			SELECT 
+				fk_role AS "role"
+			,	fk_menu AS "menu"
+			FROM tb_role_menu 
+		) AS rolemenu
+					
+	</sql>
+	
+	<select id="getList" parameterType="Map" resultType="Map">
+	
+		SELECT * FROM <include refid="rolemenu"/> WHERE "role" = #{role}
+		
+	</select>
+	
+	<select id="getListByID" parameterType="String" resultType="Map">
+
+		SELECT * FROM <include refid="rolemenu"/> 
+		WHERE "role" IN (SELECT fk_admin_id FROM tb_admin_role WHERE fk_admin_id = #{id})	
+	
+	</select>
+	
+	<insert id="register" parameterType="Map">
+	
+		INSERT INTO tb_role_menu (
+			fk_role
+		,	fk_menu
+		)
+		VALUES (
+			#{role}
+		,	#{menu}
+		)
+	
+	</insert>
+	
+	<delete id="remove" parameterType="Map">
+	
+		DELETE FROM tb_role_menu 
+		<trim prefix="WHERE" prefixOverrides="AND || OR">
+			<if test="role != 0 and role != null">AND fk_role = #{role}</if>
+			<if test="menu != null and menu != ''">AND fk_menu = #{menu}</if>
+		</trim>
+				
+	</delete>	
+	
+</mapper>

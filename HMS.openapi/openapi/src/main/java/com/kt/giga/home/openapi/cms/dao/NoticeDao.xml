@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kt.giga.home.openapi.cms.dao.NoticeDao">
+
+	<select id="getNoticeList" parameterType="string" resultType="Notice">
+		<!-- SELECT 
+			*
+		FROM 
+			tb_notice
+		WHERE 
+			fk_cp_code	= #{cpCode}
+			AND fd_open_yn	= 'Y'
+		ORDER BY 
+			fd_preorder_yn DESC
+			, fd_regdate DESC -->
+		SELECT *
+		FROM (
+			SELECT *
+			FROM tb_notice
+			WHERE fk_cp_code = #{cpCode} AND fd_open_yn	= 'Y'
+			ORDER BY fd_regdate DESC
+		) AS A
+		ORDER BY fd_preorder_yn DESC
+		<if test="limitCnt !='' and limitCnt != null and limitCnt !=0">	Limit ${limitCnt}	</if>
+		<if test="startSeq !='' and startSeq != null">					OFFSET ${startSeq}	</if>		
+	</select>
+
+	<select id="getNoticeAllCnt" parameterType="string" resultType="int">
+		SELECT 
+			COUNT(*)
+		FROM 
+			tb_notice
+		WHERE 
+			fk_cp_code	= #{cpCode}
+			AND fd_open_yn	= 'Y'
+	</select>
+
+</mapper>
+
+

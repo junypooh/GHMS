@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kt.giga.home.cms.manager.dao.ManagerDao">
+
+	<sql id="manager">
+		(
+			SELECT 
+				pk_admin_id AS "id"
+			,	fd_admin_pw AS "pw"
+			,	fd_admin_name AS "name"
+			,	fd_company AS "company"
+			,	fd_team AS "team"
+			,	fd_status_cd AS "statusCd"
+			,	fd_phone AS "phone"
+			,	fd_mobile AS "mobile"
+			,	fd_email AS "email"
+			,	fd_memo AS "memo"
+			,	fd_regdate AS "regDate"
+			,	fd_login_ip AS "loginIp"
+			,	fd_login_date AS "loginDate"
+			,	fd_cahnge_pw_date AS "changePwDate"
+			,	fd_admin_pw_tmp AS "pwTmp"
+			,	fd_admin_pw_tmp_date AS "pwTmpDate"
+			,	fk_role AS "role"
+			,	fd_name AS "roleName"
+			FROM tb_admin AS a 
+			LEFT OUTER JOIN (
+				SELECT 
+					fk_admin_id
+				,	fk_role
+				, 	fd_name 
+				FROM tb_admin_role AS ar 
+				INNER JOIN tb_role AS r 
+				ON ar.fk_role = r.pk_role 
+			) AS r 
+			ON a.pk_admin_id = r.fk_admin_id  
+		) AS manager 	
+			
+	</sql>
+
+	<sql id="where">
+	
+		<trim prefix="WHERE" prefixOverrides="AND || OR ">
+			<if test="searchRole != null and searchRole != 0">
+				AND "role" = #{searchRole} 
+			</if>		
+			<if test="searchColumn != null and searchColumn != null and searchString != null and searchString != ''">
+				AND "${searchColumn}" LIKE '%' || #{searchString} || '%'
+			</if>
+		</trim>	
+		
+	</sql>
+	
+	<select id="getCount" parameterType="Map" resultType="int">
+	
+		SELECT COUNT(id) cnt 
+		FROM <include refid="manager"/> 
+		<include refid="where"/>
+		
+	</select>
+	
+	<select id="get" parameterType="Map" resultType="Manager">
+	
+		SELECT * FROM <include refid="manager"/>  
+		WHERE "id" = #{id} 
+	
+	</select>
+
+	<select id="getList" parameterType="Map" resultType="Manager">
+	
+		SELECT * 
+		FROM (
+			SELECT * FROM <include refid="manager"/>
+			<include refid="where"/> 
+			ORDER BY "regDate" DESC
+		) AS manager 
+		LIMIT ${pageSize} OFFSET (#{page} - 1) * #{pageSize}
+		
+	</select>
+	
+	<insert id="register" parameterType="Manager">
+	
+		INSERT INTO tb_admin(
+			pk_admin_id
+		,	fd_admin_pw
+		, 	fd_admin_name
+		, 	fd_company
+		, 	fd_team
+		,   fd_status_cd
+		, 	fd_phone
+		, 	fd_mobile
+		, 	fd_email
+		, 	fd_memo
+		)
+		VALUES (
+			#{id}
+		,	#{pw}
+		,	#{name}
+		,	#{company}
+		,	#{team}
+		,	#{statusCd}
+		,	#{phone}
+		,	#{mobile}
+		,	#{email}
+		,	#{memo}
+		)		
+	
+	</insert>
+	
+	<update id="modify" parameterType="Manager">
+	
+		UPDATE tb_admin  
+		<trim prefix="SET" prefixOverrides="," >
+			<if test="pw != null and pw != ''">						, fd_admin_pw			=	#{pw}			</if>
+			<if test="name != null and name != ''">					, fd_admin_name			=	#{name}			</if>
+			<if test="company != null and company != ''">			, fd_company			=	#{company}		</if>
+			<if test="team != null and team != ''">					, fd_team				=	#{team}			</if>
+			<if test="statusCd != null and statusCd != ''">			, fd_status_cd			=	#{statusCd}		</if>
+			<if test="phone != null and phone != ''">				, fd_phone				=	#{phone}		</if>
+			<if test="mobile != null and mobile != ''">				, fd_mobile				=	#{mobile}		</if>
+			<if test="email != null and email != ''">				, fd_email				=	#{email}		</if>
+			<if test="memo != null and memo != ''">					, fd_memo				=	#{memo}			</if>
+			<if test="regDate != null and regDate != ''">			, fd_regdate			=	#{regDate}		</if>
+			<if test="loginIp != null and loginIp != ''">			, fd_login_ip			=	#{loginIp}		</if>
+			<if test="loginDate != null and loginDate != ''">		, fd_login_date			=	#{loginDate}	</if>
+			<if test="changePwDate != null and changePwDate != ''">	, fd_cahnge_pw_date		=	#{changePwDate}	</if>
+			<if test="pwTmp != null">								, fd_admin_pw_tmp		=	#{pwTmp}		</if>
+			<if test="pwTmpDate != null">							, fd_admin_pw_tmp_date	=	#{pwTmpDate}	</if>
+		</trim>
+		WHERE pk_admin_id = #{id}
+		
+	</update>
+	
+	<delete id="remove" parameterType="Manager">
+	
+		DELETE FROM tb_admin WHERE pk_admin_id = #{id}
+	
+	</delete>
+	
+</mapper>

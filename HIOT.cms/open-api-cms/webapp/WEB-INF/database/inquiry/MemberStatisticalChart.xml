@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kt.giga.home.cms.inquiry.dao.MemberStatisticalChartDao">
+
+	<select id="getList" parameterType="Map" resultType="Map">
+
+		/*
+  		이용중 : 0001
+		이용중지 : 0002
+		해지 : 0003
+		*/
+		SELECT 
+			pst1."dateStr" 
+		,	pst1."unitSvcCd" 
+		,	pst1."unitSvcNm"
+		,	pst2."accrueOperate"
+		,	pst1.operate
+		,	pst1.stop
+		,	pst1.cancel
+		FROM (
+		
+			SELECT 
+				"dateStr" 
+			,	dd."unitSvcCd"
+			,	MAX(dd."unitSvcNm") AS "unitSvcNm"
+			,	SUM(CASE WHEN "srvrTrtTypeCd" = '0001' THEN 1 ELSE 0 END) AS operate
+			,	SUM(CASE WHEN "srvrTrtTypeCd" = '0002' THEN 1 ELSE 0 END) AS stop  
+			,	SUM(CASE WHEN "srvrTrtTypeCd" = '0003' THEN 1 ELSE 0 END) AS cancel 
+			FROM (
+				SELECT * 
+				FROM (
+				
+					SELECT 
+						date_str AS "dateStr" 
+					FROM 	tb_date_dic
+					<if test="searchStartDateStr != null and searchStartDateStr != '' and searchEndDateStr != null and searchEndDateStr != ''"> 
+						WHERE date_str BETWEEN #{searchStartDateStr} AND #{searchEndDateStr}
+					</if>					
+				) AS dd CROSS JOIN (
+					SELECT 
+						fd_name AS "unitSvcCd" 
+					,	fd_memo AS "unitSvcNm" 
+					FROM 	tb_code 
+					WHERE 	fd_up_code = '1200'						
+				) AS code 
+				<if test="unitSvcCds != null and unitSvcCds != ''">
+					WHERE code."unitSvcCd" IN (${unitSvcCds})
+				</if>		
+			) AS dd 
+			LEFT OUTER JOIN (
+				SELECT 
+					unit_svc_cd AS "unitSvcCd"
+				,	oprt_sttus_cd AS "srvrTrtTypeCd"
+				,	CASE WHEN oprt_sttus_cd = '0001' THEN to_char(cret_dt, 'YYYYMMDD') ELSE to_char(amd_dt, 'YYYYMMDD') END AS "apyIfCmpltDt"
+				FROM 	svc_tgt_bas
+				<if test="searchStartDate != null and searchStartDate != '' and searchEndDate != null and searchEndDate != ''"> 
+					WHERE CASE WHEN oprt_sttus_cd = '0001' THEN cret_dt ELSE amd_dt END BETWEEN #{searchStartDate} AND #{searchEndDate}
+				</if>
+			) AS pst 
+			ON dd."dateStr" = pst."apyIfCmpltDt"
+			AND dd."unitSvcCd" = pst."unitSvcCd" 
+			GROUP BY dd."dateStr", dd."unitSvcCd"
+			
+		) AS pst1  
+		LEFT OUTER JOIN (
+			SELECT 
+				"dateStr" 
+			,	dd."unitSvcCd"	
+			,	COUNT(pst."apyIfCmpltDt") AS "accrueOperate" 
+			FROM (
+				SELECT * 
+				FROM (
+				
+					SELECT 
+						date_str AS "dateStr" 
+					FROM 	tb_date_dic
+					<if test="searchStartDateStr != null and searchStartDateStr != '' and searchEndDateStr != null and searchEndDateStr != ''"> 
+						WHERE date_str BETWEEN #{searchStartDateStr} AND #{searchEndDateStr}
+					</if>					
+				) AS dd 
+				CROSS JOIN (
+					SELECT 
+						fd_name AS "unitSvcCd" 
+					,	fd_memo AS "unitSvcNm" 
+					FROM 	tb_code 
+					WHERE 	fd_up_code = '1200'						
+				) AS code 
+				<if test="unitSvcCds != null and unitSvcCds != ''">
+					WHERE code."unitSvcCd" IN (${unitSvcCds})
+				</if>
+			) AS dd 
+			LEFT OUTER JOIN (
+				SELECT 
+					unit_svc_cd AS "unitSvcCd"
+				,	to_char(cret_dt, 'YYYYMMDD') AS "apyIfCmpltDt"
+				FROM 	svc_tgt_bas
+				WHERE 	oprt_sttus_cd = '0001'
+			) AS pst 
+			ON dd."dateStr" <![CDATA[>=]]> pst."apyIfCmpltDt" 
+			AND dd."unitSvcCd" = pst."unitSvcCd" 
+			
+			GROUP BY dd."dateStr", dd."unitSvcCd" 
+		) AS pst2 
+		ON pst1."dateStr" = pst2."dateStr" 
+		AND pst1."unitSvcCd" = pst2."unitSvcCd" 
+		
+		ORDER BY pst1."dateStr" ASC 	
+		
+	</select>
+
+</mapper>

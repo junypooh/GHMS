@@ -1,0 +1,375 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kt.giga.home.openapi.ghms.user.dao.MasterDao">
+	
+	<!-- 회원 정보 가져오기 -->
+	<select id="selectMemberInfo" resultType="userVo" parameterType="string">
+		SELECT
+			REL.MBR_SEQ			AS "mbrSeq",
+			REL.DSTR_CD			AS "dstrCd",
+			REL.SVC_THEME_CD	AS "svcThemeCd",
+			REL.UNIT_SVC_CD		AS "unitSvcCd",
+			TGT.PNS_REG_ID		AS "pnsRegId",
+			TGT.APPL_VER		AS "applVer",
+			TGT.TEL_NO			AS "telNo"
+		FROM
+			SVC_MBR_REL AS REL,
+			SVC_TGT_CONN_BAS AS TGT
+		WHERE
+				REL.MBR_SEQ			= TGT.MBR_SEQ
+		AND		REL.DSTR_CD			= TGT.DSTR_CD
+		AND		REL.SVC_THEME_CD	= TGT.SVC_THEME_CD
+		AND		REL.UNIT_SVC_CD		= TGT.UNIT_SVC_CD
+		<if test='masterYn != null and masterYn eq "Y"'>
+		AND		REL.SVC_STTUS_CD	= '01'
+		</if>
+		AND		REL.DSTR_CD			= #{dstrCd}
+		AND		REL.SVC_THEME_CD	= #{svcThemeCd}
+		AND		REL.UNIT_SVC_CD		= #{unitSvcCd}
+		<if test="telNo != null and telNo != ''">
+		AND		TGT.TEL_NO			= #{telNo}
+		AND		EXISTS (SELECT 1 FROM SVC_TGT_BAS WHERE MBR_SEQ = REL.MBR_SEQ AND DSTR_CD = REL.DSTR_CD AND SVC_THEME_CD = REL.SVC_THEME_CD AND UNIT_SVC_CD = REL.UNIT_SVC_CD)
+		</if>
+		<if test="mbrSeq != null and mbrSeq != 0">
+		AND		REL.MBR_SEQ			= #{mbrSeq}
+		</if>
+	</select>
+	
+	<!-- 서비스위임관계 테이블 존재 여부 -->
+	<select id="selectSvcEtsRel" resultType="int">
+		SELECT COUNT(1)
+		FROM SVC_ETS_REL
+		WHERE ETS_MBR_SEQ = #{etsMbrSeq}
+		AND MBR_SEQ = #{mbrSeq}
+		AND DSTR_CD = #{dstrCd}
+		AND SVC_THEME_CD = #{svcThemeCd}
+		AND UNIT_SVC_CD = #{unitSvcCd}
+		AND SVC_TGT_SEQ = #{svcTgtSeq}
+	</select>
+	
+	<!-- 서비스위임관계 테이블 INSERT -->
+	<insert id="insertSlaveByPushIntoSvcEtsRel" parameterType="com.kt.giga.home.openapi.ghms.user.domain.key.SvcEtsRelKey">
+		INSERT INTO SVC_ETS_REL
+		(ETS_MBR_SEQ, MBR_SEQ, DSTR_CD, SVC_THEME_CD, UNIT_SVC_CD, SVC_TGT_SEQ, CRET_DT)
+		VALUES
+		(#{etsMbrSeq}, #{mbrSeq}, #{dstrCd}, #{svcThemeCd}, #{unitSvcCd}, #{svcTgtSeq}, now())
+	</insert>
+	
+	<!--  서비스대상접속설정내역 테이블 INSERT -->	
+	<insert id="insertSlaveByPushIntoSvcTgtConnSetupTxn" parameterType="com.kt.giga.home.openapi.ghms.user.domain.key.SvcEtsRelKey">
+		INSERT INTO MBR_SPOT_DEV_SETUP_TXN
+		(
+			MBR_SEQ, DSTR_CD, SVC_THEME_CD, UNIT_SVC_CD, SPOT_DEV_SEQ, SVC_TGT_SEQ, GROUP_SETUP_CD, SETUP_CD, SETUP_VAL
+		)
+		SELECT
+			#{etsMbrSeq}, #{dstrCd}, #{svcThemeCd}, #{unitSvcCd}, SPOT_DEV_SEQ, #{svcTgtSeq}, #{groupSetUpCd}, #{setUpCd}, #{setUpValue}
+		FROM SPOT_DEV_BAS
+		WHERE SVC_TGT_SEQ = #{svcTgtSeq}
+		AND DEL_YN			= 'N'
+		AND USE_YN			= 'Y'
+		<if test='svcTgtTypeCd != null and svcTgtTypeCd eq "0000"'>
+		AND UP_SPOT_DEV_SEQ IS NOT NULL
+		AND UP_SVC_TGT_SEQ IS NOT NULL
+		</if>
+		<if test="spotDevSeq != null and spotDevSeq != ''">
+		AND SPOT_DEV_SEQ	= #{spotDevSeq}
+		</if>
+	</insert>
+	
+	<!--  서비스대상접속설정내역 테이블 INSERT -->	
+	<insert id="insertSlaveByPushIntoSvcTgtConnSetupTxnAp" parameterType="com.kt.giga.home.openapi.ghms.user.domain.key.SvcEtsRelKey">
+		INSERT INTO MBR_SPOT_DEV_SETUP_TXN
+		(
+			MBR_SEQ, DSTR_CD, SVC_THEME_CD, UNIT_SVC_CD, SPOT_DEV_SEQ, SVC_TGT_SEQ, GROUP_SETUP_CD, SETUP_CD, SETUP_VAL
+		)
+		SELECT
+			#{mbrSeq}, #{dstrCd}, #{svcThemeCd}, #{unitSvcCd}, SPOT_DEV_SEQ, #{svcTgtSeq}, #{groupSetUpCd}, #{setUpCd}, #{setUpValue}
+		FROM SPOT_DEV_BAS
+		WHERE SVC_TGT_SEQ = #{svcTgtSeq}
+		AND SPOT_DEV_SEQ	= #{spotDevSeq}
+		AND DEL_YN			= 'N'
+		AND USE_YN			= 'Y'
+	</insert>
+	
+	<!-- 사용자 리스트 조회 -->
+	<select id="selectSlaveUserList" resultType="com.kt.giga.home.openapi.ghms.user.domain.vo.MasterUserVo">
+		SELECT	MBR_SEQ					AS "userNo" , 
+				TEL_NO					AS "telNo",
+				(SELECT MBR_NICK_NM FROM MANAGER_PROF_TXN WHERE MBR_SEQ = MST.MBR_SEQ) AS "userNm"
+		FROM SVC_TGT_CONN_BAS MST
+				WHERE 1=1
+				AND DSTR_CD				= #{dstrCd}
+				AND SVC_THEME_CD		= #{svcThemeCd}
+				AND UNIT_SVC_CD			= #{unitSvcCd}
+				AND  MBR_SEQ 			= #{userNo}
+		UNION ALL
+		SELECT	REL.ETS_MBR_SEQ			AS "userNo" , 
+				TGT.TEL_NO				AS "telNo", 
+				(SELECT MBR_NICK_NM FROM MANAGER_PROF_TXN WHERE MBR_SEQ = REL.ETS_MBR_SEQ) AS "userNm"
+		FROM (
+				SELECT ETS_MBR_SEQ 
+				FROM  SVC_ETS_REL
+				WHERE MBR_SEQ		= #{userNo}
+				AND DSTR_CD			= #{dstrCd}
+				AND SVC_THEME_CD	= #{svcThemeCd}
+				AND UNIT_SVC_CD		= #{unitSvcCd}
+				AND SVC_TGT_SEQ		= #{serviceNo}
+			)AS REL,
+			(
+				SELECT MBR_SEQ, TEL_NO
+				FROM SVC_TGT_CONN_BAS
+				WHERE 1=1
+				AND DSTR_CD				= #{dstrCd}
+				AND SVC_THEME_CD		= #{svcThemeCd}
+				AND UNIT_SVC_CD			= #{unitSvcCd}
+			 )AS TGT
+		WHERE TGT.MBR_SEQ	= REL.ETS_MBR_SEQ
+	</select>
+	
+	<!--  서비스대상접속설정내역 테이블 SELECT -->
+	<select id="selectUserMbrSpotDevSetupTxnCount" resultType="int">
+		SELECT COUNT(1) FROM MBR_SPOT_DEV_SETUP_TXN
+		WHERE MBR_SEQ 		= #{etsMbrSeq}
+		  AND DSTR_CD 		= #{dstrCd}
+		  AND SVC_THEME_CD 	= #{svcThemeCd}
+		  AND UNIT_SVC_CD 	= #{unitSvcCd}
+		  AND SVC_TGT_SEQ 	= #{svcTgtSeq}
+		  AND SPOT_DEV_SEQ	= #{spotDevSeq}
+		  AND GROUP_SETUP_CD	= #{groupSetUpCd}
+		  AND SETUP_CD		= #{setUpCd}
+	</select>
+	
+	<!--  서비스대상접속설정내역 테이블 DELETE -->
+	<delete id="deleteUserMbrSpotDevSetupTxn">
+		DELETE FROM MBR_SPOT_DEV_SETUP_TXN
+		WHERE MBR_SEQ 		= #{etsMbrSeq}
+		  AND SVC_TGT_SEQ 	= #{svcTgtSeq}
+		  AND DSTR_CD 		= #{dstrCd}
+		  AND SVC_THEME_CD 	= #{svcThemeCd}
+		  AND UNIT_SVC_CD 	= #{unitSvcCd}
+		  <if test="setUpCd != null and setUpCd != ''">
+		  AND SETUP_CD		= #{setUpCd}
+		  </if>
+		  <if test="spotDevSeq != null and spotDevSeq != ''">
+		  AND SPOT_DEV_SEQ	= #{spotDevSeq}
+		  </if>
+		  <if test="groupSetUpCd != null and groupSetUpCd != ''">
+		  AND GROUP_SETUP_CD	= #{groupSetUpCd}
+		  </if>
+	</delete>
+	
+	<!-- 서비스위임관계 테이블 DELETE -->
+	<delete id="deleteUserSvcEtsRel">
+		DELETE FROM SVC_ETS_REL
+		WHERE ETS_MBR_SEQ 	= #{etsMbrSeq}
+		  AND MBR_SEQ 		= #{mbrSeq}
+		  AND SVC_TGT_SEQ 	= #{svcTgtSeq}
+		  AND DSTR_CD 		= #{dstrCd}
+		  AND SVC_THEME_CD 	= #{svcThemeCd}
+		  AND UNIT_SVC_CD 	= #{unitSvcCd}
+	</delete>
+	
+	<!-- 사용자 디바이스(도어락) 존재 여부 CNT -->
+	<select id="selectMbrPwdTxnCnt" resultType="int">
+		SELECT COUNT(*) 
+		FROM MBR_PWD_TXN
+		WHERE SVC_TGT_SEQ  = #{serviceNo}
+		AND   USER_CD_SEQ  = #{passwdSeq}
+		AND   SPOT_DEV_SEQ = #{devUUID}
+	</select>
+	
+	<!-- 도어락 회원비밀번호내역 테이블 INSERT -->
+	<insert id="insertMbrPwdTxn">
+		<!--selectKey resultType="int" keyProperty="seq" order="BEFORE">
+			SELECT NEXTVAL('SEQ_MBR_PWD_TXN')
+		</selectKey-->
+		INSERT INTO MBR_PWD_TXN
+		(TRGT_MBR_SEQ, SPOT_DEV_SEQ, TRGT_NM, PWD, SVC_TGT_SEQ, USER_CD_SEQ)
+		VALUES
+		(#{passwdSeq}, #{devUUID}, #{userNm}, #{passwd}, #{serviceNo}, #{passwdSeq} )
+		<!-- (#{seq}, #{devUUID}, #{userNm}, #{passwd}, #{serviceNo}, #{passwdSeq} ) -->
+	</insert>
+	
+	<!-- 사용자 디바이스(도어락) 비밀번호 및 닉네임 수정 -->
+	<update id="updateMbrPwdTxn">
+		UPDATE MBR_PWD_TXN
+		SET TRGT_NM = #{userNm},
+		    PWD 	= #{passwd}
+		WHERE SVC_TGT_SEQ  = #{serviceNo}
+		AND   USER_CD_SEQ  = #{passwdSeq}
+		AND   SPOT_DEV_SEQ = #{devUUID}
+	</update>
+	
+	<!-- 사용자 디바이스 비밀번호 조회 -->
+	<select id="selectMbrPwdTxn" resultType="com.kt.giga.home.openapi.ghms.user.domain.vo.MasterUserVo">
+		SELECT 	TRGT_MBR_SEQ	AS "userNo",
+				SPOT_DEV_SEQ	AS "devUUID",	
+				TRGT_NM			AS "userNm",
+				PWD				AS "passwd",
+				SVC_TGT_SEQ		AS "serviceNo",
+				USER_CD_SEQ	 	AS "passwdSeq"
+		FROM 	MBR_PWD_TXN
+		WHERE 	SPOT_DEV_SEQ 	= #{devUUID}
+		  AND 	SVC_TGT_SEQ 	= #{serviceNo}
+		  ORDER BY USER_CD_SEQ
+	</select>
+	
+	<!-- 사용자 디바이스 비밀번호 삭제 -->
+	<delete id="deleteMbrPwdTxn">
+		UPDATE MBR_PWD_TXN
+		SET TRGT_NM = null,
+		    PWD 	= '0'
+		WHERE SVC_TGT_SEQ  = #{serviceNo}
+		AND   SPOT_DEV_SEQ = #{devUUID}
+		AND   USER_CD_SEQ  = #{passwdSeq}
+	</delete>
+	
+	<!-- 사용자 디바이스 사용 권한 조회 -->
+	<select id="selectDeviceUseAuth" resultType="com.kt.giga.home.openapi.ghms.user.domain.vo.DeviceVo">
+		SELECT  A.SPOT_DEV_SEQ 	AS "devUUID",
+				A.SETUP_CD		AS "cntrCode",
+				A.SETUP_VAL		AS "cntrValue",
+				B.DEV_NM		AS "devNm",
+				C.DEV_TYPE_CD	AS "devModelNm"
+		FROM 	MBR_SPOT_DEV_SETUP_TXN A, 
+				SPOT_DEV_BAS B, 
+				DEV_MODEL_BAS C
+		WHERE 	A.SVC_TGT_SEQ 		= B.SVC_TGT_SEQ
+		  AND 	A.SPOT_DEV_SEQ 		= B.SPOT_DEV_SEQ
+		  AND 	B.DEV_MODEL_SEQ 	= C.DEV_MODEL_SEQ
+		  AND 	B.DEL_YN 			= 'N'
+		  AND 	B.USE_YN 			= 'Y'
+		  AND 	C.DEL_YN 			= 'N'
+		  AND 	A.DSTR_CD 			= #{dstrCd}
+		  AND 	A.SVC_THEME_CD 		= #{svcThemeCd}
+		  AND 	A.UNIT_SVC_CD 		= #{unitSvcCd}
+		  AND 	A.GROUP_SETUP_CD 	= #{groupSetupCd}
+		  AND 	A.SETUP_CD 			= #{setupCd}
+		  AND 	A.SVC_TGT_SEQ 		= #{serviceNo}
+		  AND 	A.MBR_SEQ 			= #{userNo}
+	</select>
+	
+	<!-- 사용자 디바이스 사용 권한 수정 -->
+	<update id="updateDeviceUserAuth">
+		UPDATE	MBR_SPOT_DEV_SETUP_TXN
+		SET 	SETUP_VAL 			= #{setupVal} 
+		WHERE 	DSTR_CD 			= #{dstrCd}
+		  AND 	SVC_THEME_CD 		= #{svcThemeCd}
+		  AND 	UNIT_SVC_CD 		= #{unitSvcCd}
+		  AND 	GROUP_SETUP_CD 		= #{groupSetupCd}
+		  AND 	SETUP_CD 			= #{setupCd}
+		  AND 	SVC_TGT_SEQ 		= #{serviceNo}   
+		  AND 	MBR_SEQ 			= #{userNo}
+		  AND 	SPOT_DEV_SEQ 		= #{devUUID}
+	</update>
+	
+	<!-- 사용자 닉네임 조회 -->
+	<select id="selectUserNickName" resultType="String">
+		SELECT MBR_NICK_NM FROM MANAGER_PROF_TXN
+		WHERE MBR_SEQ 			= #{userNo}
+	</select>
+	
+	<!-- 사용자 닉네임 등록 -->
+	<insert id="insertUserNickName">
+		INSERT INTO MANAGER_PROF_TXN
+		(MBR_SEQ, MBR_NICK_NM
+		<if test="fileSeq != null and fileSeq gt 0">
+		, FILE_SEQ
+		</if>
+		)
+		VALUES
+		(#{userNo}, #{userNm}
+		<if test="fileSeq != null and fileSeq gt 0">
+		, #{fileSeq}
+		</if>
+		)
+	</insert>
+	
+	<!-- 사용자 닉네임 수정 -->
+	<update id="updateUserNickName">
+		UPDATE	MANAGER_PROF_TXN
+		SET 	MBR_NICK_NM	= #{userNm} 
+		<if test="fileSeq != null and fileSeq gt 0">
+		, 		FILE_SEQ 	= #{fileSeq}
+		</if>
+		WHERE 	MBR_SEQ		= #{userNo}
+	</update>
+	
+	<!-- IDMS 에서 넘어온 custNm 조회 -->
+	<select id="selectSvcTgtNm" resultType="String">
+		SELECT
+			SVC_TGT_NM
+		FROM SVC_TGT_BAS
+		WHERE MBR_SEQ = #{userNo}
+		AND		DSTR_CD 		= #{dstrCd}
+		AND		SVC_THEME_CD 	= #{svcThemeCd}
+		AND		UNIT_SVC_CD 	= #{unitSvcCd}
+		AND 	SVC_TGT_TYPE_CD = '0000'
+		AND		OPRT_STTUS_CD	= '0001'
+		AND		DEL_YN			= 'N'
+		LIMIT 1
+	</select>
+	
+	<!-- 사용자 프로필 사진 등록 -->
+	<insert id="insertUserProfileImg">
+		<selectKey resultType="int" keyProperty="fileSeq" order="BEFORE">
+			SELECT NEXTVAL('SEQ_FILE_ADM_TXN')
+		</selectKey>
+		INSERT INTO FILE_ADM_TXN
+		(FILE_SEQ, ORIGIN_FILE_NM, STORE_FILE_NM, FILE_SIZE_VAL, CONTS_TYPE_VAL)
+		VALUES
+		(#{fileSeq}, #{orgFileNm}, #{storeFileNm}, #{fileSize}, #{contsType})
+	</insert>
+	
+	<!-- 사용자 프로필 이미지 정보 조회 -->
+	<select id="selectUserProfileImg" resultType="hMap">
+		SELECT
+			B.ORIGIN_FILE_NM, B.STORE_FILE_NM
+		FROM MANAGER_PROF_TXN A
+		, FILE_ADM_TXN B
+		WHERE A.FILE_SEQ = B.FILE_SEQ
+		AND A.MBR_SEQ = #{mbrSeq}
+	</select>
+	
+	<select id="selectUserInfoList" resultType="com.kt.giga.home.openapi.ghms.user.domain.vo.UserInfo">
+		SELECT
+			A.MBR_ID AS "mbrId",
+			C.PNS_REG_ID AS "pnsRegId",
+			C.TEL_NO AS "telNo",
+			D.MBR_NICK_NM AS "mbrNickNm"
+		FROM MBR_BAS A
+		, SVC_MBR_REL B
+		, SVC_TGT_CONN_BAS C
+		, MANAGER_PROF_TXN D
+		WHERE A.MBR_SEQ = B.MBR_SEQ
+		AND B.MBR_SEQ = C.MBR_SEQ
+		AND B.DSTR_CD = C.DSTR_CD
+		AND B.SVC_THEME_CD = C.SVC_THEME_CD
+		AND B.UNIT_SVC_CD = C.UNIT_SVC_CD
+		AND A.MBR_SEQ = D.MBR_SEQ
+		AND B.DSTR_CD = '001'
+		AND B.SVC_THEME_CD = 'HIT'
+		AND B.UNIT_SVC_CD = '003'
+		AND A.MBR_SEQ IN (
+			SELECT MBR_SEQ
+			FROM SVC_TGT_BAS
+			WHERE SVC_TGT_SEQ = #{serviceNo}
+			AND DSTR_CD = '001'
+			AND SVC_THEME_CD = 'HIT'
+			AND UNIT_SVC_CD = '003'
+			UNION ALL
+			SELECT ETS_MBR_SEQ
+			FROM SVC_ETS_REL
+			WHERE SVC_TGT_SEQ = #{serviceNo}
+			AND DSTR_CD = '001'
+			AND SVC_THEME_CD = 'HIT'
+			AND UNIT_SVC_CD = '003'
+		)
+	</select>
+	
+	<select id="selectSvcTgtTypeCd" resultType="String">
+		SELECT SVC_TGT_TYPE_CD FROM SVC_TGT_BAS WHERE SVC_TGT_SEQ = #{svcTgtSeq}
+	</select>
+	
+</mapper>

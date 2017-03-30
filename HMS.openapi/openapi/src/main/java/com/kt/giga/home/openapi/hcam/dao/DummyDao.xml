@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kt.giga.home.openapi.hcam.dao.DummyDao">
+
+	<delete id="deleteTermsAgree">
+		DELETE FROM tb_terms_agree
+		 WHERE MBR_SEQ = (SELECT mbr_seq FROM MBR_BAS WHERE MBR_ID = #{userId})
+	</delete>
+	
+	<delete id="deleteParentsAgree">
+		DELETE FROM tb_terms_agree
+		 WHERE MBR_SEQ = (SELECT mbr_seq FROM MBR_BAS WHERE MBR_ID = #{userId})
+	</delete>
+	
+	<update id="updateSvcTgtConnBas">
+		UPDATE svc_tgt_conn_bas
+		   SET tel_no = null
+		 WHERE MBR_SEQ = (SELECT mbr_seq FROM MBR_BAS WHERE MBR_ID = #{userId})
+	</update>
+	
+	<select id="selectUserInfo" resultType="User" parameterType="string">
+		SELECT 	c.unit_svc_cd AS unitSvcCd,
+				c.pns_reg_id AS pnsRegId,
+				c.tel_no AS telNo,
+				c.conn_terml_id AS termlId, 
+				d.mbr_id AS mbrId,
+				d.mbr_seq AS mbrSeq
+		  FROM 	spot_dev_bas a,
+				svc_tgt_bas b,
+				svc_tgt_conn_bas c,
+				mbr_bas d
+		  WHERE	a.svc_tgt_seq = b.svc_tgt_seq
+			AND	b.mbr_seq = c.mbr_seq
+			AND	c.mbr_seq = d.mbr_seq
+			AND	a.use_yn = 'Y'
+			and	a.dev_uu_id = #{devUUID}
+		  LIMIT 1
+	</select>
+	
+	<select id="selectSpotDevList" resultType="SpotDev" parameterType="string">
+		SELECT	b.OPRT_STTUS_CD			AS "oprtSttusCd",
+				b.SVC_CONT_ID			AS "svcContId",
+				a.SVC_TGT_SEQ::bigint	AS "svcTgtSeq",
+				a.SPOT_DEV_SEQ::bigint	AS "spotDevSeq",
+				a.SPOT_DEV_ID			AS "spotDevId",
+				a.DEV_UU_ID				AS "devUUID",
+				a.DEV_NM				AS "spotDevNm",
+				a.ATHN_NO				AS "athnNo",
+				a.DEV_STTUS_CD			AS "devSttusCd"
+		  FROM 	spot_dev_bas a,
+				svc_tgt_bas b
+		  WHERE	a.svc_tgt_seq = b.svc_tgt_seq
+			AND	a.use_yn = 'Y'
+			and	a.dev_uu_id = #{devUUID}
+		  LIMIT 1
+	</select>
+	
+</mapper>

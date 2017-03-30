@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kt.giga.home.openapi.ghms.user.dao.MyPageDao">
+	
+	<!-- 비상연락망 조회 -->
+	<select id="selectEmcontacts" resultType="MasterUserVo">
+		SELECT
+			EGNCY_CNTC_NET_SEQ	AS "seq",
+			NM					AS "userNm",
+			TEL_NO				AS "telNo",
+			NTC_RCV_YN 			AS "pushYn"
+		FROM EGNCY_CNTC_NET_TXN
+		WHERE SVC_TGT_SEQ = #{serviceNo} 
+	</select>
+	
+	<!-- 비상연락망 등록 -->
+	<insert id="insertEmcontacts">
+		<selectKey resultType="int" keyProperty="seq" order="BEFORE">
+			SELECT NEXTVAL('SEQ_EGNCY_CNTC_NET_TXN')
+		</selectKey>
+		INSERT INTO EGNCY_CNTC_NET_TXN
+		(EGNCY_CNTC_NET_SEQ, SVC_TGT_SEQ, NM, TEL_NO, CRET_DT, NTC_RCV_YN)
+		VALUES
+		(#{seq}, #{serviceNo}, #{userNm}, #{telNo}, now(), 'Y')
+	</insert>
+	
+	<!-- 비상연락망 삭제 -->
+	<delete id="deleteEmcontacts">
+		DELETE FROM EGNCY_CNTC_NET_TXN
+		WHERE EGNCY_CNTC_NET_SEQ = #{seq}
+	</delete>
+	
+	<!-- 비상연락망 수정 -->
+	<update id="updateEmcontacts">
+		UPDATE EGNCY_CNTC_NET_TXN
+		SET NTC_RCV_YN = #{pushYn}
+		WHERE SVC_TGT_SEQ = #{serviceNo}
+	</update>
+	
+</mapper>

@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kt.giga.home.openapi.health.profile.dao.ProfileDao">
+
+	<select id="getMbrSeq" parameterType="String" resultType="int">
+	
+		SELECT MB.mbr_seq AS mbr_seq FROM MBR_BAS MB 
+		INNER JOIN SVC_TGT_BAS STB 
+		ON MB.mbr_seq = STB.mbr_seq 
+		WHERE MB.mbr_id = #{value} AND STB.oprt_sttus_cd = '0001'	
+	
+	</select>
+
+	<select id="get" parameterType="int" resultType="Map">
+	
+		SELECT
+			mbr_seq AS "mbrSeq" 
+		,	COALESCE(mbr_nick_nm, '') AS "nickNm"
+		,	COALESCE(gender_val, '') AS "gender"
+		,	COALESCE(age_val, '') AS "age"
+		,	COALESCE(hight_val, '') AS "hight"
+		,	COALESCE(weight_val, '') AS "weight" 
+		FROM HEALTHCARE_PROF_TXN 
+		WHERE mbr_seq	=	#{mbrSeq}
+	
+	</select>
+
+	<insert id="register" parameterType="Map">
+	
+		INSERT INTO HEALTHCARE_PROF_TXN (
+			mbr_seq
+		,	gender_val
+		,	hight_val
+		,	age_val
+		,	weight_val
+		,	mbr_nick_nm
+		) 
+		VALUES (
+			#{mbrSeq}
+		,	#{gender}
+		,	#{hight}
+		,	#{age}
+		,	#{weight}
+		,	#{nickNm}
+		)
+	
+	</insert>
+	
+	<update id="modify" parameterType="Map">
+	
+		UPDATE HEALTHCARE_PROF_TXN SET 
+			gender_val	=	#{gender}
+		,	hight_val	=	#{hight}
+		,	age_val		=	#{age}
+		,	weight_val	=	#{weight}
+		,	mbr_nick_nm	=	#{nickNm} 
+		WHERE mbr_seq	=	#{mbrSeq}
+	
+	</update>
+
+</mapper>

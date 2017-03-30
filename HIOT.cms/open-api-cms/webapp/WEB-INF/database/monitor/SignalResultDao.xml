@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kt.giga.home.cms.monitor.dao.SignalResultDao">
+
+	<select id="getList" parameterType="Map" resultType="Map">
+	
+		select 	
+			sdb.spot_dev_seq AS "spotDevSeq" 		-- 현장장치 일련번호
+		,	sdb.svc_tgt_seq AS "svcTgtSeq"			-- 서비스대상 일련번호 
+		,	sdb.spot_dev_id AS "spotDevId"			-- 현장장치 아이디
+		,	sdb.dev_uu_id AS "devUUID"				-- 현장장치 UUID
+		,	sdb.dev_nm AS "devNm"					-- 현장장치 닉네임
+		,	mb.mbr_id AS "mbrId"					-- 회원 아이디
+		,	stcb.tel_no AS "telNo" 					-- 전화번호
+		,	stcb.tel_cnt AS "telCnt" 				-- 전화번호 카운트
+		,	sdeb.dev_cctc_mac AS "devCctvMac" 		-- 현장장치 맥주소
+		,	sdeb1.dev_con_stat AS "devConStat" 		-- 현장장치 접속상태
+		from 	spot_dev_bas sdb
+			inner join 	svc_tgt_bas stb on (sdb.svc_tgt_seq = stb.svc_tgt_seq)
+			inner join 	mbr_bas mb on (stb.mbr_seq = mb.mbr_seq)
+			inner join (
+				SELECT	mbr_seq, count(mbr_seq) tel_cnt, MAX(tel_no) AS tel_no 
+				FROM 	svc_tgt_conn_bas 
+				WHERE 	unit_svc_cd = '001' 
+				<if test="searchString != null and searchString != ''">
+					<if test="searchColumn == 'stcb.tel_no' ">
+						AND tel_no ilike '%' || #{searchString} || '%'
+					</if>
+				</if>
+				group by mbr_seq
+			) AS stcb ON	stb.mbr_seq = stcb.mbr_seq 	
+			left join (
+				select 	distinct(svc_tgt_seq), spot_dev_seq, spot_dev_item_val as dev_cctc_mac
+				from 	spot_dev_expnsn_bas 
+				where	spot_dev_item_nm='cctvMac'
+			) AS sdeb ON 	(sdb.svc_tgt_seq=sdeb.svc_tgt_seq and sdeb.spot_dev_seq=sdb.spot_dev_seq)
+			left join (
+				select 	distinct(svc_tgt_seq), spot_dev_seq, spot_dev_item_val as dev_con_stat
+				from 	spot_dev_expnsn_bas
+				where	spot_dev_item_nm='conStat'
+			) AS sdeb1 ON 	(sdb.svc_tgt_seq=sdeb1.svc_tgt_seq and sdeb1.spot_dev_seq=sdb.spot_dev_seq)
+		<where>
+			stb.del_yn = 'N'
+			and sdb.use_yn = 'Y'
+			<if test="searchString != null and searchString != ''">
+				<if test="searchColumn != 'stcb.tel_no' ">
+					AND ${searchColumn} ilike '%' || #{searchString} || '%'
+				</if>
+			</if>
+			<if test="searchString == null or searchString == ''">
+				AND 1 = 0 
+			</if>
+		</where>
+		
+	</select>
+	
+	<!-- 홈매니져용 -->
+	<select id="getManagerList" parameterType="Map" resultType="Map">
+		select 	
+			sdb.spot_dev_seq AS "spotDevSeq" 		-- 현장장치 일련번호
+		,	sdb.svc_tgt_seq AS "svcTgtSeq"			-- 서비스대상 일련번호 
+		,	sdb.spot_dev_id AS "spotDevId"			-- 현장장치 아이디
+		,	sdb.dev_uu_id AS "devUUID"				-- 현장장치 UUID
+		,	sdb.dev_nm AS "devNm"					-- 현장장치 닉네임
+		,	mb.mbr_id AS "mbrId"					-- 회원 아이디
+		,	stcb.tel_no AS "telNo" 					-- 전화번호
+		,	stcb.tel_cnt AS "telCnt" 				-- 전화번호 카운트
+		,	sdeb.dev_gw_mac AS "devGwMac" 			-- 현장장치 맥주소
+		,	sdeb1.dev_con_stat AS "devConStat" 		-- 현장장치 접속상태
+		from 	spot_dev_bas sdb
+			inner join 	svc_tgt_bas stb on (sdb.svc_tgt_seq = stb.svc_tgt_seq)
+			inner join 	mbr_bas mb on (stb.mbr_seq = mb.mbr_seq)
+			inner join (
+				SELECT	mbr_seq, count(mbr_seq) tel_cnt, MAX(tel_no) AS tel_no 
+				FROM 	svc_tgt_conn_bas 
+				WHERE 	unit_svc_cd = '003'
+				AND	dstr_cd = '001'     
+				AND 	svc_theme_cd = 'HIT'
+				<if test="searchString != null and searchString != ''">
+					<if test="searchColumn == 'stcb.tel_no' ">
+						AND tel_no ilike '%' || #{searchString} || '%'
+					</if>
+				</if>
+				group by mbr_seq
+			) AS stcb ON	stb.mbr_seq = stcb.mbr_seq  	
+			left join (
+				select 	distinct(svc_tgt_seq), spot_dev_seq, spot_dev_item_val as dev_gw_mac
+				from 	spot_dev_expnsn_bas 
+				where	spot_dev_item_nm='gwMac'
+			) AS sdeb ON 	(sdb.svc_tgt_seq=sdeb.svc_tgt_seq and sdeb.spot_dev_seq=sdb.spot_dev_seq)
+			left join (
+				select 	distinct(svc_tgt_seq), spot_dev_seq, spot_dev_item_val as dev_con_stat
+				from 	spot_dev_expnsn_bas
+				where	spot_dev_item_nm='conStat'
+			) AS sdeb1 ON 	(sdb.svc_tgt_seq=sdeb1.svc_tgt_seq and sdeb1.spot_dev_seq=sdb.spot_dev_seq)
+		where
+			stb.del_yn = 'N'
+		and sdb.use_yn = 'Y'
+			<if test="searchString != null and searchString != ''">
+				<if test="searchColumn != 'stcb.tel_no' ">
+					AND ${searchColumn} ilike '%' || #{searchString} || '%'
+				</if>
+			</if>
+			<if test="searchString == null or searchString == ''">
+				AND 1 = 0 
+			</if>
+		and	sdb.up_spot_dev_seq is null
+		and sdb.up_svc_tgt_seq is null
+	</select>
+
+</mapper>

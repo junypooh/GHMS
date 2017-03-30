@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kt.giga.home.cms.inquiry.dao.PnsHistoryDao">
+
+ 	<sql id="pnsHistory">
+	
+		(
+			SELECT 		A.*, E.fd_memo AS "unitSvcNm", F.dev_nm AS "devNm"
+
+			FROM 
+			(
+			    SELECT C.mbr_id AS "mbrId"					
+				, B.mbr_seq AS "mbrSeq"				
+				, B.tel_no AS "telNo"					
+				, TO_CHAR(B.msg_trm_dt, 'YYYY-MM-DD HH24:MI:SS:MS') AS "msgTrmDt"
+				, B.msg_trm_forward_yn AS "msgTtrmForwardYn"	
+				, B.msg_trm_sbst AS "msgTrmSbst"
+				, B.unit_svc_cd AS "unitSvcCd"
+				, B.dstr_cd AS "dstrCd"
+				, B.svc_theme_cd AS "svcThemeCd"
+				, B.setup_cd AS "setupCd"
+				, B.svc_tgt_seq AS "svcTgtSeq"
+				, B.spot_dev_seq AS "spotDevSeq"
+				, B.msg_rcv_yn AS "msgRcvYn"
+				, B.msg_rcv_dt AS "msgRcvDt" 
+				, B.msg_rcv_fail_txn  AS "msgRcvFailTxn" 
+				, B.msg_seq AS "msgSeq"
+					
+			    FROM msg_trm_forward_txn B
+			    LEFT OUTER JOIN mbr_bas C		
+			    ON B.mbr_seq = C.mbr_seq
+			    
+			    <include refid="where"/>
+			    
+			    ORDER BY B.msg_trm_dt DESC
+			    
+			    <!-- 
+			    <if test="pageSize != null and pageSize != '' and page != null and page != ''">
+			    LIMIT ${pageSize} OFFSET (#{page} - 1) * #{pageSize}
+			    </if> 
+			    -->
+			    
+			    <if test="page != null and page != '' and pageSize != null and pageSize != ''">LIMIT ${pageSize} OFFSET (#{page} - 1) * #{pageSize}</if>
+				
+			) AS A
+			
+						
+				
+			LEFT OUTER JOIN tb_code E
+			ON "unitSvcCd" = E.fd_name 
+			AND E.fd_up_code = '1200'
+			
+			LEFT OUTER JOIN spot_dev_bas F
+			ON "svcTgtSeq"  = F.svc_tgt_seq  
+			AND "spotDevSeq" = F.spot_dev_seq 
+
+		) AS pnsHistory
+		
+	</sql>
+	
+	<sql id="where">
+	
+ 		<trim prefix="WHERE" prefixOverrides="AND || OR ">
+ 			<if test="searchStartDate != null and searchStartDate != '' and searchEndDate != null and searchEndDate != ''">
+				AND B.msg_trm_dt BETWEEN #{searchStartDate} AND #{searchEndDate} 
+			</if>
+			
+			<if test="cpCode != null and cpCode != ''">
+				AND B.unit_svc_cd = #{cpCode}
+			</if>
+
+			<if test="unitEntCd != null and unitEntCd != ''">
+				<if test="unitEntCd != null and unitEntCd != ''">
+					<if test="unitEntCd != null and unitEntCd != ''">
+						<if test="unitEntCd != null and unitEntCd != ''">
+							AND B.setup_cd = #{unitEntCd} AND B.unit_svc_cd = #{unitSvcCd} AND B.svc_theme_cd = #{svcThemeCd} AND B.dstr_cd = #{dstrCd}
+						</if>
+					</if>
+				</if>
+			</if>
+			
+			<if test="searchColumn == 'telNo' and searchString != null and searchString != ''">
+				AND B.tel_no LIKE '%' || #{searchString} || '%'
+			</if>
+			
+			<if test="searchColumn == 'mbrId' and searchString != null and searchString != ''">
+				AND C.mbr_id LIKE '%' || #{searchString} || '%'
+			</if>
+
+		</trim>	
+	
+	</sql>
+	
+	<sql id="whereHistoryDetail">
+	
+ 		<trim prefix="WHERE" prefixOverrides="AND || OR ">
+ 		
+			<if test="mbrSeq != null and mbrSeq != ''">
+				AND "mbrSeq" = #{mbrSeq}
+			</if>
+			
+			<if test="msgTrmDt != null and msgTrmDt != ''">
+				AND "msgTrmDt" LIKE #{msgTrmDt}
+			</if>
+		</trim>	
+	
+	</sql>
+	
+	<select id="getCount" parameterType="Map" resultType="int">
+	
+ 		SELECT COUNT(*) cnt 
+		FROM
+		( 
+			SELECT C.mbr_id AS "mbrId"					
+			, B.mbr_seq AS "mbrSeq"				
+			, B.tel_no AS "telNo"					
+			, TO_CHAR(B.msg_trm_dt, 'YYYY-MM-DD HH24:MI:SS:MS') AS "msgTrmDt"
+			, B.msg_trm_forward_yn AS "msgTtrmForwardYn"	
+			, B.msg_trm_sbst AS "msgTrmSbst"
+			, B.unit_svc_cd AS "unitSvcCd"
+			, B.dstr_cd AS "dstrCd"
+			, B.svc_theme_cd AS "svcThemeCd"
+			, B.setup_cd AS "setupCd"
+			, B.svc_tgt_seq AS "svcTgtSeq"
+			, B.spot_dev_seq AS "spotDevSeq"
+			, B.msg_rcv_yn AS "msgRcvYn"
+			, B.msg_rcv_dt AS "msgRcvDt" 
+			, B.msg_rcv_fail_txn  AS "msgRcvFailTxn" 
+				
+		    FROM msg_trm_forward_txn B
+		    LEFT OUTER JOIN mbr_bas C		
+		    ON B.mbr_seq = C.mbr_seq
+		    
+		    <include refid="where"/>
+		 
+		) AS list
+		
+		INNER JOIN tb_cam_stat_evet D	
+		ON  "dstrCd"   = D.dstr_cd    
+		AND "svcThemeCd"  = D.svc_theme_cd    
+		AND "unitSvcCd"   = D.unit_svc_cd   
+		AND "setupCd"   = D.stat_evet_cd
+		
+	</select>
+	
+	<select id="getList" parameterType="Map" resultType="Map">
+	
+		SELECT 
+			list.*
+			, D.stat_evet_nm AS "statEvetNm"  
+			, D.stat_evet_cd AS "statEvetCd"  
+
+		FROM
+		( 
+			SELECT pnsHistory.* 
+			FROM
+			<include refid="pnsHistory"/> 
+		) AS list
+		
+		INNER JOIN tb_cam_stat_evet D	
+		ON  "dstrCd"   = D.dstr_cd    
+		AND "svcThemeCd"  = D.svc_theme_cd    
+		AND "unitSvcCd"   = D.unit_svc_cd   
+		AND "setupCd"   = D.stat_evet_cd	
+			
+		order by "msgTrmDt" desc
+		
+		<if test="page == null or page == '' or pageSize == null or pageSize == ''">LIMIT ${limitCount}</if>	
+		
+	</select>
+	
+	<select id="getListDetail" parameterType="Map" resultType="Map">
+		SELECT 
+			list.*
+			, D.stat_evet_nm AS "statEvetNm"  
+			, D.stat_evet_cd AS "statEvetCd"  
+
+		FROM
+		(
+			SELECT *
+			FROM <include refid="pnsHistory"/> 
+			<include refid="whereHistoryDetail"/>
+		) AS list
+		
+		INNER JOIN tb_cam_stat_evet D	
+		ON  "dstrCd"   = D.dstr_cd    
+		AND "svcThemeCd"  = D.svc_theme_cd    
+		AND "unitSvcCd"   = D.unit_svc_cd   
+		AND "setupCd"   = D.stat_evet_cd
+		
+	</select>
+	
+	<!-- 리트스에서 이벤트 종류 조회 -->
+	<select id="getEntList" resultType="Map">
+		SELECT 
+				B.stat_evet_nm AS "unitEntNm"
+			,	B.stat_evet_cd AS "unitEntCd"
+			,	B.unit_svc_cd AS "unitSvcCd" 
+			,	B.svc_theme_cd AS "svcThemeCd"
+			,	B.dstr_cd AS "dstrCd"
+		FROM ( 
+			SELECT setup_cd, unit_svc_cd FROM svc_tgt_conn_setup_txn GROUP BY setup_cd, unit_svc_cd 
+		) as A 
+		
+		<!-- INNER JOIN tb_cam_stat_evet B -->
+		RIGHT JOIN tb_cam_stat_evet B
+		ON A.setup_cd = B.stat_evet_cd	
+		
+		<trim prefix="WHERE" prefixOverrides="AND || OR ">
+			<if test="cpCode != null and cpCode != ''">
+				AND B.unit_svc_cd = #{cpCode}
+			</if>
+		</trim>
+	</select>
+	
+
+	<!-- 서비스종류 -->
+	<select id="getSvcList" resultType="Map">
+		SELECT 
+				fd_memo AS "unitSvcNm"
+			,	fd_name AS "unitSvcCd" 
+		FROM tb_code
+		WHERE fd_up_code = '1200' 
+	</select>	
+</mapper>

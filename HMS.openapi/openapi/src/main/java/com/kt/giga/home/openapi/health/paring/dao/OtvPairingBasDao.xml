@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kt.giga.home.openapi.health.paring.dao.OtvPairingBasDao">
+
+	<select id="getParingCnt" parameterType="string" resultType="int">
+		SELECT 
+			count(*)
+		FROM 
+			otv_pairing_bas
+		WHERE 
+				unit_svc_cd			= #{cpCode}
+			AND tel_no				= #{telNo}
+			AND otv_svc_cont_id		= #{said}
+	</select>
+
+	<select id="getMemberCnt" parameterType="string" resultType="int">
+		SELECT 
+			count(*)
+		FROM 
+			svc_tgt_bas
+		WHERE 
+				unit_svc_cd			= #{cpCode}
+			AND svc_tgt_id			= #{telNo}
+			AND oprt_sttus_cd		= '0001'
+	</select>
+	
+	<select id="getSaidCnt" parameterType="OtvPairingBas" resultType="int">
+		SELECT 
+			count(*)
+		FROM 
+			otv_pairing_bas
+		WHERE 
+				dstr_cd				= #{dstr_cd}
+			AND svc_theme_cd		= #{svc_theme_cd}
+			AND unit_svc_cd			= #{unit_svc_cd}
+			AND otv_svc_cont_id		= #{otv_svc_cont_id}
+	</select>
+	
+	<select id="getOtvPairingBasCnt" parameterType="OtvPairingBas" resultType="int">
+		SELECT 
+			count(*)
+		FROM 
+			otv_pairing_bas
+		WHERE 
+				dstr_cd				= #{dstr_cd}
+			AND svc_theme_cd		= #{svc_theme_cd}
+			AND unit_svc_cd			= #{unit_svc_cd}
+			AND tel_no				= #{tel_no}
+			AND otv_app_id			= #{otv_app_id}
+			AND otv_svc_cont_id		= #{otv_svc_cont_id}
+			AND ''||mbr_seq			= #{mbr_seq}
+	</select>
+	
+	<insert id="setOtvPairingBas" parameterType="OtvPairingBas">
+		INSERT INTO otv_pairing_bas (
+			  dstr_cd
+			, svc_theme_cd
+			, unit_svc_cd
+			, tel_no
+			, otv_app_id
+			, otv_svc_cont_id
+			, mbr_seq
+		)
+		VALUES (
+				#{dstr_cd}
+			,	#{svc_theme_cd}
+			,	#{unit_svc_cd}
+			,	#{tel_no}
+			,	#{otv_app_id}
+			,	#{otv_svc_cont_id}
+			,	${mbr_seq}
+		)
+	</insert>
+
+	<select id="modifyOtvPairingBasCnt" parameterType="string" resultType="int">
+		SELECT 
+			count(*)
+		FROM 
+			otv_pairing_bas
+		WHERE 
+				otv_svc_cont_id 	= #{otv_svc_cont_id}
+			AND ''||mbr_seq			= #{mbr_seq}
+			AND dstr_cd 			= #{dstr_cd}
+			AND svc_theme_cd		= #{svc_theme_cd}
+			AND unit_svc_cd 		= #{unit_svc_cd}
+	</select>
+
+	<update id="modifyOtvPairingBas"  parameterType="OtvPairingBas">
+		UPDATE 
+			otv_pairing_bas
+		<trim prefix="SET" prefixOverrides=",">
+			<if test="stb_nick_nm != '' and stb_nick_nm != null">
+				stb_nick_nm = #{stb_nick_nm}
+			</if>
+		</trim>
+		WHERE 
+				otv_svc_cont_id 	= #{otv_svc_cont_id}
+			AND ''||mbr_seq			= #{mbr_seq}
+			AND dstr_cd 			= #{dstr_cd}
+			AND svc_theme_cd		= #{svc_theme_cd}
+			AND unit_svc_cd 		= #{unit_svc_cd}
+	</update>
+
+	<select id="getOtvPairingBasList" parameterType="string" resultType="OtvPairingBas">
+		SELECT 
+			*
+		FROM 
+			otv_pairing_bas
+		WHERE 
+				dstr_cd 			= #{dstr_cd}
+			AND svc_theme_cd		= #{svc_theme_cd}
+			AND unit_svc_cd 		= #{unit_svc_cd}
+			<if test="mbr_seq != '' and mbr_seq != null">
+				AND ''||mbr_seq = #{mbr_seq}
+			</if>
+			<if test="tel_no != '' and tel_no != null">
+				AND tel_no = #{tel_no}
+			</if>
+			<if test="otv_svc_cont_id != '' and otv_svc_cont_id != null">
+				AND otv_svc_cont_id = #{otv_svc_cont_id}
+			</if>
+		ORDER BY
+			cret_dt DESC
+	</select>
+	
+	<delete id="delPairingStb"  parameterType="OtvPairingBas">
+		DELETE FROM 
+			otv_pairing_bas 
+		WHERE 
+				otv_svc_cont_id 	= #{otv_svc_cont_id}
+			AND tel_no 				= #{tel_no}
+			AND dstr_cd 			= #{dstr_cd}
+			AND svc_theme_cd		= #{svc_theme_cd}
+			AND unit_svc_cd 		= #{unit_svc_cd}
+	</delete>
+
+</mapper>

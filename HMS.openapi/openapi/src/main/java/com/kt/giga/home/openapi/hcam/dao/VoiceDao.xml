@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kt.giga.home.openapi.hcam.dao.VoiceDao">
+
+	<!-- 음성 세션 아이디 생성 -->
+	<select id="createVoiceSessionId" resultType="int">
+		SELECT NEXTVAL('SEQ_VOICE_SESSION_SS_ID')
+	</select>
+	
+	<!-- 음성 세션 조회 -->
+	<select id="getVoiceSession" resultType="VoiceSession">
+		SELECT
+				SS_ID			AS "sessionId",
+				MBR_SEQ			AS "mbrSeq",
+				CONN_TERML_ID	AS "termlId"
+		FROM
+				VOICE_SESSION
+		WHERE
+				DEV_UU_ID		= #{devUUID}
+	</select>
+	
+	<!-- 만료된 음성 세션 조회 -->
+	<select id="getExpiredVoiceSession" resultType="VoiceSession">
+		<![CDATA[
+		SELECT
+				SS_ID			AS "sessionId",
+				MBR_SEQ			AS "mbrSeq",
+				CONN_TERML_ID	AS "termlId",
+				DEV_UU_ID		AS "devUUID"
+		FROM
+				VOICE_SESSION
+		WHERE
+				AMD_DT < CURRENT_TIMESTAMP - interval '${expireTimeMinute} minute'
+		]]>
+	</select>
+	
+	<!-- 음성 세션 삽입 -->
+	<insert id="insertVoiceSession">
+		INSERT INTO VOICE_SESSION (
+			SS_ID,
+			DEV_UU_ID,
+			MBR_SEQ,
+			CONN_TERML_ID
+		) VALUES (
+			#{sessionId},
+			#{devUUID},
+			#{mbrSeq},
+			#{termlId}
+		)
+	</insert>
+	
+	<!-- 음성 세션 연장 -->
+	<update id="updateVoiceSession">
+		UPDATE
+				VOICE_SESSION
+		SET
+				AMD_DT			= now()
+		WHERE
+				SS_ID			= #{sessionId}
+		AND		DEV_UU_ID		= #{devUUID}
+		AND		MBR_SEQ			= #{mbrSeq}
+		AND		CONN_TERML_ID	= #{termlId}
+	</update>
+	
+	<!-- 음성 세션 삭제 -->
+	<delete id="deleteVoiceSession">
+		DELETE
+		FROM	VOICE_SESSION
+		WHERE
+				SS_ID			= #{sessionId}
+		AND		DEV_UU_ID		= #{devUUID}
+		AND		MBR_SEQ			= #{mbrSeq}
+		AND		CONN_TERML_ID	= #{termlId}
+	</delete>
+
+</mapper>

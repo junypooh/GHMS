@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kt.giga.home.openapi.ghms.user.dao.ConfigDao">
+
+	<!-- 알림 수신 설정 조회 -->
+	<select id="selectAlarmlist" resultType="ConfigVo">
+		SELECT
+			A.SPOT_DEV_SEQ::bigint	AS "devUUID",
+			A.SETUP_VAL				AS "setUpVal",
+			B.DEV_NM				AS "devNm",
+			C.DEV_TYPE_CD			AS "devModelNm"
+		FROM MBR_SPOT_DEV_SETUP_TXN A
+		, SPOT_DEV_BAS B
+		, DEV_MODEL_BAS C
+		WHERE A.SPOT_DEV_SEQ = B.SPOT_DEV_SEQ
+		AND A.SVC_TGT_SEQ = B.SVC_TGT_SEQ
+		AND B.DEV_MODEL_SEQ = C.DEV_MODEL_SEQ
+		AND A.MBR_SEQ = #{userNo}
+		AND A.DSTR_CD = #{dstrCd}
+		AND A.SVC_THEME_CD = #{svcThemeCd}
+		AND A.UNIT_SVC_CD = #{unitSvcCd}
+		AND A.GROUP_SETUP_CD = #{groupSetupCd}
+		AND A.SETUP_CD = #{setupCd}
+		AND A.SVC_TGT_SEQ = #{serviceNo}
+		AND B.DEL_YN = 'N'
+		AND C.DEL_YN = 'N'
+		<!--if test='userType != null and userType neq "M"'-->
+		AND EXISTS (
+			SELECT 1 FROM MBR_SPOT_DEV_SETUP_TXN
+			WHERE MBR_SEQ = A.MBR_SEQ
+			AND DSTR_CD = A.DSTR_CD
+			AND SVC_THEME_CD = A.SVC_THEME_CD
+			AND UNIT_SVC_CD = A.UNIT_SVC_CD
+			AND GROUP_SETUP_CD = A.GROUP_SETUP_CD
+			AND SVC_TGT_SEQ = A.SVC_TGT_SEQ
+			AND SPOT_DEV_SEQ = A.SPOT_DEV_SEQ
+			AND SETUP_CD = '003'
+			AND SETUP_VAL = 'Y'
+		)
+		<!--/if-->
+	</select>
+	
+	<!-- 알림 수신 설정 수정 -->
+	<update id="updateAlarm">
+		UPDATE MBR_SPOT_DEV_SETUP_TXN
+		SET SETUP_VAL = #{setupVal}
+		WHERE MBR_SEQ = #{userNo}
+		AND DSTR_CD = #{dstrCd}
+		AND SVC_THEME_CD = #{svcThemeCd}
+		AND UNIT_SVC_CD = #{unitSvcCd}
+		AND GROUP_SETUP_CD = #{groupSetupCd}
+		AND SETUP_CD = #{setupCd}
+		AND SVC_TGT_SEQ = #{serviceNo}
+		AND SPOT_DEV_SEQ = #{devUUID}
+	</update>
+
+</mapper>

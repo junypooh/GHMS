@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kt.giga.home.cms.common.dao.FileInfoDao">
+
+	<sql id="file">
+		(
+			SELECT 
+				pk_file AS "file"
+			,	fk_table AS "table"
+			,	fk_unique AS "unique"
+			,	fd_description AS "description"
+			,	fd_url_path AS "urlPath"
+			,	fd_virutal_path AS "virtualPath"
+			,	fd_real_path AS "realPath"
+			,	fd_org_name AS "orgName"
+			,	fd_save_name AS "saveName"
+			,	fd_size AS "size"
+			,	fd_ext AS "ext"
+			,	fd_sort_no AS "sortNo"
+			FROM tb_file			
+		) AS file 
+	</sql>
+
+	<select id="get" parameterType="FileInfo" resultType="FileInfo">
+	
+		SELECT * FROM <include refid="file"/> WHERE "file" = #{file}
+		
+	</select>
+
+	<select id="getList" parameterType="FileInfo" resultType="FileInfo">
+	
+		SELECT * FROM <include refid="file"/> 
+		WHERE "table" = #{table} AND "unique" = #{unique}  
+		ORDER BY "sortNo" ASC
+		
+	</select>
+	
+	<insert id="register" parameterType="FileInfo">
+	
+		INSERT INTO tb_file (
+			fk_table
+		,	fk_unique
+		,	fd_description
+		,	fd_url_path
+		,	fd_virutal_path
+		,	fd_real_path
+		,	fd_org_name
+		,	fd_save_name
+		,	fd_size
+		,	fd_ext
+		,	fd_sort_no
+		)
+		VALUES (
+			#{table}
+		,	#{unique}
+		,	#{description}
+		,	#{urlPath}
+		,	#{virtualPath}
+		,	#{realPath}
+		,	#{orgName}
+		,	#{saveName}
+		,	#{size}
+		,	#{ext}
+		,	#{sortNo}		
+		)
+	
+	</insert>
+	
+	<delete id="remove" parameterType="FileInfo">
+	
+		DELETE FROM tb_file WHERE fk_table = #{table} AND fk_unique = #{unique}
+	
+	</delete>
+
+</mapper>

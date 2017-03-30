@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kt.giga.home.cms.terms.dao.ServiceTermsDao">
+
+	<sql id="terms">
+		(
+			SELECT 
+			
+				pk_terms AS "pk"
+			,	fk_cp_code AS "cpCode"
+			,	fk_terms_code AS "termsCode"
+			,	fd_admin_name AS "adminName"
+			,	fd_terms_title AS "title"
+			,	fd_terms_contents AS "termsContents"
+			,	fd_terms_mandatory_yn AS "mandatoryYN"
+			,	fd_terms_ver AS "termsVer"
+			,	fd_writer_id AS "writerId"
+			,	TO_CHAR(fd_regdate, 'YYYY.MM.DD') AS "regDate"
+			
+			FROM tb_terms AS n 
+			LEFT OUTER JOIN (SELECT pk_admin_id, fd_admin_name FROM tb_admin) AS a 
+			ON n.fd_writer_id = a.pk_admin_id
+			<!-- 관리상품 관리로 인해 추가된 부분 시작 -->
+			WHERE n.fk_cp_code IN (SELECT fk_cp_code FROM tb_admin_svc WHERE fk_admin_id = #{id})
+			<!-- 관리상품 관리로 인해 추가된 부분 끝 -->
+		) AS terms 	
+			
+	</sql>
+
+	<sql id="where">
+	
+		<trim prefix="WHERE" prefixOverrides="AND || OR ">
+			<if test="cpCode != null and cpCode != ''">
+				"cpCode" = #{cpCode}
+			</if>
+			AND "termsCode" = '1301'
+		</trim>	
+		
+	</sql>
+	
+	<select id="getCount" parameterType="Map" resultType="int">
+	
+		SELECT COUNT(pk) cnt 
+		FROM <include refid="terms"/> 
+		<include refid="where"/>
+		
+	</select>
+
+	<select id="getList" parameterType="Map" resultType="Map">
+	
+		SELECT * 
+		FROM (
+			SELECT * FROM <include refid="terms"/>
+			<include refid="where"/> 
+			ORDER BY "pk" DESC
+		) AS termsList 
+		LIMIT ${pageSize} OFFSET (#{page} - 1) * #{pageSize}
+		
+	</select>
+	<select id="getLastVer" parameterType="Map" resultType="String">
+	
+		SELECT 	fd_terms_ver AS "termsVer"
+		FROM 	tb_terms
+		WHERE 	fk_cp_code = #{cpCode}
+					AND fk_terms_code = #{termsCode}
+		ORDER BY fd_regdate DESC
+		LIMIT 1
+	</select>
+	
+	<select id="get" parameterType="Map" resultType="Map">
+	
+		SELECT 
+		
+			"pk"
+			,	"cpCode"
+			,	"adminName"
+			,	"title"
+			,	"termsContents"
+			,	"mandatoryYN"
+			,	"termsVer"
+			,	"termsCode"
+			,	"writerId"
+			,	"regDate"
+			
+		FROM <include refid="terms"/>  
+		WHERE "pk" = #{pk} 
+	
+	</select>
+	
+	<delete id="remove" parameterType="Map">
+	
+		DELETE FROM tb_terms
+		WHERE pk_terms = #{pk}  
+	
+	</delete>
+	
+	<insert id="register" parameterType="Map">
+	
+		INSERT INTO tb_terms(
+		
+			fk_cp_code
+		,	fk_terms_code
+		,	fd_terms_ver
+		,	fd_terms_title
+		,	fd_terms_contents
+		,	fd_terms_mandatory_yn
+		,	fd_writer_id
+		,	fd_writer_ip
+		,	fd_regdate
+		
+		)
+		VALUES(
+		
+			#{cpCode}
+		,	'1301'
+		,	#{termsVer}
+		,	#{title}
+		,	#{termsContents}
+		,	#{mandatoryYN}
+		,	#{writerId}
+		,	#{writerIp}
+		,	#{regDate}
+		
+		)
+	
+	</insert>
+	
+	<update id="modify" parameterType="Map">
+	
+		UPDATE tb_terms SET 
+		
+			fd_terms_title				= #{title}
+		,	fd_terms_contents 			= #{termsContents}	
+		,	fd_terms_mandatory_yn 		= #{mandatoryYN}	
+		,	fd_modifier_id				= #{modifierId}
+		,	fd_modifier_ip				= #{modifierIp}
+		,	fd_update_date				= #{updateDate}			
+		
+		WHERE pk_terms = #{pk}
+	
+	</update>
+
+</mapper>

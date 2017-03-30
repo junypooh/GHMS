@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kt.giga.home.openapi.dao.RtimeSttusDataUpdTxnDao">
+
+	<select id="getRtimeSttusDataUpdTxn" parameterType="string" resultType="RtimeSttusDataUpdTxn">
+		SELECT 
+			*
+		FROM 
+			rtime_sttus_data_upd_txn 
+		WHERE 
+			svc_tgt_seq			= #{svcTgtSeq}
+			AND	spot_dev_seq 	= #{spot_dev_seq}
+			AND	snsn_tag_dtl_cd = #{snsn_tag_dtl_cd}
+	</select>
+
+</mapper>

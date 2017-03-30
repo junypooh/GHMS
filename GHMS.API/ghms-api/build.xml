@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="openapi" default="ghms-war-production" basedir="." xmlns:artifact="antlib:org.apache.maven.artifact.ant">
+
+<!-- ===================== Property Definitions =========================== -->
+
+
+	<property name="mvn" value="C:\work\abits\springsource\apache-maven-3.0.3"/>	<!-- maven 설치 위치 -->
+	<property name="pom" value="./pom.xml"/>				<!-- pom.xml 설치 위치 -->
+	<property name="app.name.openapi" value="ghms"/>		<!-- 홈매니저 OpenAPI 어플리케이션 이름 -->
+
+<!-- ===================== typedef & path =========================== -->
+
+	<path id="maven-ant-tasks.classpath" path="lib/maven-ant-tasks-2.1.3.jar" />
+
+	<typedef resource="org/apache/maven/artifact/ant/antlib.xml"
+		uri="antlib:org.apache.maven.artifact.ant"
+		classpathref="maven-ant-tasks.classpath" />
+
+<!-- ==================== Make War ================================== -->
+
+	<!-- clean -->
+	<target name="clean" description="clean">
+		<artifact:mvn pom="${pom}" mavenHome="${mvn}" fork="true">
+			<arg value="clean"/>
+		</artifact:mvn>
+	</target>
+
+	<!-- Ghms Development -->
+	<target name="war-ghms-kth" description="Make Ghms War">
+		<artifact:mvn pom="${pom}" mavenHome="${mvn}" fork="true">
+			<arg value="-Dapp.name=${app.name.openapi}"/>
+			<arg value="-Dwar.warName=${app.name.openapi}"/>
+			<arg value="-Dservice.hostname=HM_API_01_CONTROL_REPORT"/>
+			<arg value="-Dds.name=jdbc/hcam"/>
+			<arg value="-Dlog4j.appender.rolling.File=/home/server/tomcat/logs/ghms/sys.log"/>
+			<arg value="install"/>
+		</artifact:mvn>
+	</target>
+
+	<!-- Ghms Staging -->
+	<target name="war-ghms-tb" description="Make Ghms War">
+		<artifact:mvn pom="${pom}" mavenHome="${mvn}" fork="true">
+			<arg value="-Dapp.name=${app.name.openapi}"/>
+			<arg value="-Dwar.warName=${app.name.openapi}"/>
+			<arg value="-Dservice.hostname=HM_API_01_CONTROL_REPORT"/>
+			<arg value="-Dds.name=java:/jdbc/hcam"/>
+			<!--arg value="-Dlog4j.appender.rolling.File=/jb_log/api01/ghms/sys.log"/-->
+			<arg value="install"/>
+		</artifact:mvn>
+	</target>
+
+	<!-- Ghms Production 01 -->
+	<target name="war-ghms-real01" description="Make Ghms War">
+		<artifact:mvn pom="${pom}" mavenHome="${mvn}" fork="true">
+			<arg value="-Dapp.name=${app.name.openapi}"/>
+			<arg value="-Dwar.warName=${app.name.openapi}"/>
+			<arg value="-Dservice.hostname=HM_API_01_CONTROL_REPORT"/>
+			<arg value="-Dds.name=java:/jdbc/hcam"/>
+			<arg value="install"/>
+		</artifact:mvn>
+	</target>
+
+	<!-- Ghms Production 02
+	<target name="war-ghms-real02" description="Make Ghms War">
+		<artifact:mvn pom="${pom}" mavenHome="${mvn}" fork="true">
+			<arg value="-Dapp.name=${app.name.openapi}"/>
+			<arg value="-Dwar.warName=${app.name.openapi}-02"/>
+			<arg value="-Dservice.hostname=HM_API_02_CONTROL_REPORT"/>
+			<arg value="-Dds.name=java:/jdbc/hcam"/>
+			<arg value="install"/>
+		</artifact:mvn>
+	</target>
+
+	<target name="war-ghms-real03" description="Make Ghms War">
+		<artifact:mvn pom="${pom}" mavenHome="${mvn}" fork="true">
+			<arg value="-Dapp.name=${app.name.openapi}"/>
+			<arg value="-Dwar.warName=${app.name.openapi}-03"/>
+			<arg value="-Dservice.hostname=HM_API_03_CONTROL_REPORT"/>
+			<arg value="-Dds.name=java:/jdbc/hcam"/>
+			<arg value="install"/>
+		</artifact:mvn>
+	</target>
+
+	<target name="war-ghms-real04" description="Make Ghms War">
+		<artifact:mvn pom="${pom}" mavenHome="${mvn}" fork="true">
+			<arg value="-Dapp.name=${app.name.openapi}"/>
+			<arg value="-Dwar.warName=${app.name.openapi}-04"/>
+			<arg value="-Dservice.hostname=HM_API_04_CONTROL_REPORT"/>
+			<arg value="-Dds.name=java:/jdbc/hcam"/>
+			<arg value="install"/>
+		</artifact:mvn>
+	</target>
+	 -->
+	
+	<!-- Ghms KTH 전체 -->
+	<target name="ghms-war-kth" description="Make All War" depends="clean, war-ghms-kth"/>
+
+	<!-- Ghms TB 전체 -->
+	<target name="ghms-war-tb" description="Make All War" depends="clean, war-ghms-tb"/>
+
+	<!-- Ghms Production 전체 -->
+	<!--target name="ghms-war-production" description="Make All War" depends="clean, war-ghms-real01, war-ghms-real02, war-ghms-real03, war-ghms-real04"/-->
+	<target name="ghms-war-production" description="Make All War" depends="clean, war-ghms-real01"/>
+
+</project>

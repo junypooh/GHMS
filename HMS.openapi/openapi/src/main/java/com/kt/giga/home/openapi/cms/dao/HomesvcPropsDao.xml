@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kt.giga.home.openapi.cms.dao.HomesvcPropsDao">
+
+	<update id="updateHomesvcProps"  parameterType="HomesvcProps">
+		UPDATE homesvc_props
+		<set>			
+		     cret_dt = now()
+		     , value = #{value}	
+		</set>
+		WHERE 
+				svccode	= #{svccode}
+			AND name 	= #{name}
+	</update>
+	
+	<insert id="insertHomesvcProps" parameterType="HomesvcProps">
+		INSERT INTO 
+			homesvc_props(
+				svccode
+				, name
+				, value
+			) 
+		VALUES (
+			#{svccode}
+			, #{name}
+			, #{value} 
+		);
+	</insert>
+	
+	<select id="getHomesvcPropsCnt" parameterType="HomesvcProps" resultType="int">
+		SELECT 
+			count(*)
+		FROM 
+			homesvc_props
+		WHERE 
+				svccode	= #{svccode}
+			AND name 	= #{name}
+	</select>
+	
+</mapper>
+
+

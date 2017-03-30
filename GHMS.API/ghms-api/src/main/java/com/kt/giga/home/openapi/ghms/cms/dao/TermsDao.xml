@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kt.giga.home.openapi.ghms.cms.dao.TermsDao">
+
+	<select id="selectTermsList" resultType="TermsVo">
+		<!-- SELECT 
+			A.*
+			,B.fd_agree_yn
+		FROM 
+			tb_terms AS A
+			LEFT JOIN (
+				SELECT fk_terms, fd_agree_yn, mbr_seq
+				FROM tb_terms_agree 
+				WHERE
+					pk_terms_agree IN (
+						SELECT MAX(pk_terms_agree)
+						FROM tb_terms_agree
+						<if test="mbr_seq !='' and mbr_seq != null">WHERE ''||mbr_seq=#{mbr_seq}</if>	
+						GROUP BY fk_terms
+					)					
+			) AS B ON (A.pk_terms=B.fk_terms)
+		WHERE 
+			A.fk_cp_code	= #{cpCode}
+			AND A.fd_terms_ver IN (
+				SELECT MAX(fd_terms_ver)
+				FROM tb_terms
+				WHERE fk_cp_code = #{cpCode}
+				GROUP BY fk_terms_code
+			) -->
+			
+		SELECT 
+			T.*
+		,	fd_agree_yn 
+		FROM (
+			SELECT A.*
+			FROM tb_terms AS A
+			INNER JOIN (
+				SELECT 
+					fk_terms_code
+				,	MAX(fd_terms_ver) AS fd_terms_ver
+				FROM tb_terms 
+				WHERE fk_cp_code = #{cpCode} 
+				GROUP BY fk_terms_code
+			) AS B 
+			ON  (A.fk_terms_code = B.fk_terms_code AND A.fd_terms_ver = B.fd_terms_Ver)
+		) AS T 
+		LEFT OUTER JOIN (
+			SELECT 
+				A.fk_terms AS fk_terms
+			,	A.fd_agree_yn AS fd_agree_yn 
+			FROM tb_terms_agree AS A
+			INNER JOIN (
+				SELECT MAX(pk_terms_agree) AS pk_terms_agree
+				FROM tb_terms_agree 
+				WHERE fk_cp_code = #{cpCode}
+				and fd_retract_date is null
+				<if test="mbr_seq !='' and mbr_seq != null">AND   ''||mbr_seq = #{mbr_seq}</if> 
+				GROUP BY fk_terms
+			) AS B 
+			ON (A.pk_terms_agree = B.pk_terms_agree)
+		) AS TA 
+		ON (T.pk_terms = TA.fk_terms )
+		WHERE 	fk_cp_code = #{cpCode}			
+					AND fk_terms_code != '1304'
+		ORDER BY fk_terms_code ASC
+			
+	</select>
+
+	<insert id="insertTermsAgree">
+		INSERT INTO tb_terms_agree (
+				fk_terms
+			,	fd_agree_yn
+			,	fd_agree_date
+			,	mbr_seq
+			,	fk_cp_code
+			,	fk_terms_code
+		)
+		VALUES (
+				#{fk_terms}
+			,	#{fd_agree_yn}
+			,	now()
+			,	${mbr_seq}
+			,	#{fk_cp_code}
+			,	(SELECT fk_terms_code FROM tb_terms WHERE pk_terms=#{fk_terms})
+		)
+		
+	</insert>
+
+	<insert id="insertParentsAgree">
+		INSERT INTO tb_parents_agree (
+				fd_parents_name
+			,	fd_parents_mobile
+			,	fd_agree_yn
+			,	fd_agree_date
+			,	mbr_seq
+			,	fk_cp_code
+		)
+		VALUES (
+				#{fd_parents_name}
+			,	#{fd_parents_mobile}
+			,	#{fd_agree_yn}
+			,	now()
+			,	${mbr_seq}
+			,	#{fk_cp_code}
+		)
+		
+	</insert>
+
+	<update id="updateTermsRetract">
+		UPDATE tb_terms_agree SET
+		
+		fd_retract_date	= now()
+		
+		WHERE 
+				mbr_seq = #{mbr_seq} 
+			and fk_cp_code = #{fk_cp_code}
+	</update>
+	
+</mapper>
+
+

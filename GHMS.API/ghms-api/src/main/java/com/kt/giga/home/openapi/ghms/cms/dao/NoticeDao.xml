@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kt.giga.home.openapi.ghms.cms.dao.NoticeDao">
+
+	<select id="selectNoticeList" parameterType="string" resultType="com.kt.giga.home.openapi.ghms.cms.domain.vo.NoticeDtl">
+		<!-- 
+		SELECT 
+			*
+		FROM 
+			tb_notice
+		WHERE 
+			fk_cp_code	= #{cpCode}
+			AND fd_open_yn	= 'Y'
+		ORDER BY 
+			fd_preorder_yn ASC
+			, pk_notice DESC
+		 -->	
+		SELECT *
+		FROM (
+			SELECT *
+			FROM tb_notice
+			WHERE fk_cp_code = #{cpCode} AND fd_open_yn	= 'Y'
+			ORDER BY fd_regdate DESC
+		) AS A
+		ORDER BY fd_preorder_yn DESC	
+		<if test="limitCnt !='' and limitCnt != null and limitCnt !=0">	Limit ${limitCnt}	</if>
+		<if test="startSeq !='' and startSeq != null">					OFFSET ${startSeq}	</if>		
+	</select>
+
+	<select id="selectNoticeAllCnt" parameterType="string" resultType="int">
+		SELECT 
+			COUNT(*)
+		FROM 
+			tb_notice
+		WHERE 
+			fk_cp_code	= #{cpCode}
+			AND fd_open_yn	= 'Y'
+	</select>
+
+	<select id="selectNoticePmList" parameterType="string" resultType="com.kt.giga.home.openapi.ghms.cms.domain.vo.NoticeDtl">
+		SELECT 
+			*
+		FROM 
+			tb_notice_pm
+		WHERE 
+			fk_cp_code	= #{cpCode}
+			AND fd_open_yn	= 'Y'
+			<if test="now !='' and now != null">	AND #{now} BETWEEN fd_start_time AND fd_end_time	</if>				
+		ORDER BY 
+			pk_notice_pm DESC	
+			<if test="limitCnt !='' and limitCnt != null and limitCnt !=0">	Limit ${limitCnt}	</if>
+			<if test="startSeq !='' and startSeq != null">					OFFSET ${startSeq}	</if>		
+	</select>
+
+	<select id="selectNoticePmAllCnt" parameterType="string" resultType="int">
+		SELECT 
+			COUNT(*)
+		FROM 
+			tb_notice_pm
+		WHERE 
+			fk_cp_code	= #{cpCode}
+			AND fd_open_yn	= 'Y'
+			<if test="now !='' and now != null">	AND #{now} BETWEEN fd_start_time AND fd_end_time	</if>				
+	</select>
+
+	<select id="selectNoticePopupList" parameterType="string" resultType="com.kt.giga.home.openapi.ghms.cms.domain.vo.NoticeDtl">
+	
+		SELECT 
+			*
+		FROM 
+			tb_notice_popup
+		WHERE 
+			fk_cp_code	= #{cpCode}
+			AND fd_open_yn	= 'Y'
+		ORDER BY 
+			fd_preorder_yn ASC
+			, pk_notice_popup DESC	
+			<if test="limitCnt !='' and limitCnt != null and limitCnt !=0">	Limit ${limitCnt}	</if>
+			<if test="startSeq !='' and startSeq != null">					OFFSET ${startSeq}	</if>		
+			
+	</select>
+
+	<select id="selectNoticePopupAllCnt" parameterType="string" resultType="int">
+	
+		SELECT 
+			COUNT(*)
+		FROM 
+			tb_notice_popup
+		WHERE 
+			fk_cp_code	= #{cpCode}
+			AND fd_open_yn	= 'Y'
+			
+	</select>
+	
+	<select id="selectFaqList" resultType="com.kt.giga.home.openapi.ghms.cms.domain.vo.NoticeDtl">
+		SELECT 
+			pk_faq
+		,	fd_name	AS fd_cate_name 
+		, 	fd_title
+		, 	fd_regdate
+		FROM (
+			SELECT 
+				pk_faq
+			, 	fd_title
+			, 	fd_regdate
+			,	fk_svc_fn
+			FROM 	tb_faq
+			WHERE	fk_cp_code = #{cpCode} 
+			AND 	fd_open_yn = 'Y'
+		) AS faq 
+		LEFT OUTER JOIN (
+			SELECT  
+				pk_svc_fn
+			,	fd_name	
+			FROM	tb_svc_fn 
+			WHERE	fk_cp_code = #{cpCode} 
+		) AS fn 
+		ON	faq.fk_svc_fn = fn.pk_svc_fn   
+		ORDER BY pk_faq DESC	
+		<if test="limitCnt !='' and limitCnt != null and limitCnt !=0">	
+			Limit ${limitCnt}	
+		</if>
+		<if test="startSeq !='' and startSeq != null">
+			OFFSET ${startSeq}	
+		</if>		
+	</select>
+
+	<select id="selectFaqAllCnt" parameterType="string" resultType="int">
+		SELECT 
+			COUNT(*)
+		FROM 
+			tb_faq
+		WHERE 
+			fk_cp_code	= #{cpCode}
+			AND fd_open_yn	= 'Y'
+	</select>
+	
+</mapper>
+
+

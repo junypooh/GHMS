@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kt.giga.home.openapi.ghms.kafka.dao.KafkaSpotDevDao">
+
+	<resultMap id="complexEventList" type="java.util.Map">
+		<id property="rownum" column="rownum"/>
+		<result property="svcTgtSeq" column="svc_tgt_seq"/>
+		<result property="evtId" column="event_id"/>
+		<collection property="items" ofType="java.util.Map" javaType="java.util.Map">
+			<result property="spotDevSeq" column="spot_dev_seq"/>
+		</collection>
+	</resultMap>	
+
+	<select id="selectSensorList" parameterType="map" resultMap="complexEventList">
+		SELECT  row_number() over(ORDER BY svc_tgt_seq, spot_dev_seq) as rownum
+		      , svc_tgt_seq
+		      , '001HIT003E0008' as event_id
+		      , spot_dev_seq
+		  FROM spot_dev_genl_setup_txn
+		 WHERE snsn_tag_cd = #{snsnTagCd}
+		   AND setup_val = #{snsnTagVal}
+		   AND del_yn = 'N'
+		 <if test="svcTgtSeq != null">
+		   AND svc_tgt_seq = #{svcTgtSeq}
+		 </if>
+		 <if test="spotDevSeq != null">
+		   AND spot_dev_seq = #{spotDevSeq}
+		 </if>
+		 ORDER BY rownum
+	</select>
+
+	<select id="selectSpotDevNm" parameterType="map" resultType="string">
+		SELECT dev_nm
+		  FROM spot_dev_bas
+		 WHERE svc_tgt_seq = #{svcTgtSeq}
+		   AND spot_dev_seq = #{spotDevSeq}
+	</select>
+
+	<select id="selectSpotDevSeq" parameterType="map" resultType="long">
+		SELECT spot_dev_seq
+		  FROM spot_dev_bas
+		 WHERE svc_tgt_seq = #{svcTgtSeq}
+		   AND spot_dev_id = #{spotDevId}
+		 ORDER BY spot_dev_seq desc
+		 LIMIT 1
+	</select>
+
+	<select id="selectSpotDevGenlSetupTxnCnt" parameterType="map" resultType="int">
+		SELECT count(*)
+		  FROM spot_dev_genl_setup_txn
+		 WHERE svc_tgt_seq = #{svcTgtSeq}
+		   AND spot_dev_seq = #{spotDevSeq}
+		   AND snsn_tag_cd = #{snsnTagCd}
+	</select>
+	<update id="updateSpotDevGenlSetupTxn" parameterType="map">
+		UPDATE spot_dev_genl_setup_txn
+		   SET setup_val=#{rlNumVal}, del_yn=#{delYn}, amdr_id=#{amdrId}, amd_dt=now()
+		 WHERE svc_tgt_seq = #{svcTgtSeq}
+		   AND spot_dev_seq = #{spotDevSeq}
+		   AND snsn_tag_cd = #{snsnTagCd}
+	</update>
+	<insert id="insertSpotDevGenlSetupTxn" parameterType="map">
+		INSERT INTO spot_dev_genl_setup_txn(
+		            svc_tgt_seq, spot_dev_seq, snsn_tag_cd, setup_val, del_yn, cretr_id, cret_dt)
+		    VALUES (#{svcTgtSeq}, #{spotDevSeq}, #{snsnTagCd}, #{rlNumVal}, #{delYn}, #{cretrId}, now())
+	</insert>
+	<select id="selectHbaseControlHistory" parameterType="map" resultType="com.kt.giga.home.openapi.ghms.kafka.entity.HbaseControlHistory">
+		SELECT sbas.svc_tgt_seq as svcTgtSeq 
+		     , sbas.spot_dev_seq as spotDevSeq 
+		     , sbas.dev_uu_id as devUuid 
+		     , sbas.dev_nm as devNm 
+		     , (select b.dev_type_cd from dev_model_bas b where sbas.dev_model_seq = b.dev_model_seq) as devTypeCd
+		     , minfo.mbr_seq as mbrSeq 
+		     , minfo.mbr_nick_nm as custNm 
+		     , minfo.aces_url_adr||minfo.store_file_nm as acesUrlAdr 
+		  FROM spot_dev_bas as sbas left outer join (
+			SELECT mbas.mbr_seq 
+			     , mfile.mbr_nick_nm 
+			     , mfile.aces_url_adr 
+			     , mfile.store_file_nm 
+			  FROM mbr_bas as mbas left outer join (
+			       select mpt.mbr_seq 
+				    , mpt.mbr_nick_nm 
+				    , fat.aces_url_adr 
+				    , fat.store_file_nm 
+				 from manager_prof_txn as mpt left outer join file_adm_txn as fat
+				   on mpt.file_seq = fat.file_seq) as mfile
+			    on mbas.mbr_seq = mfile.mbr_seq
+			 WHERE mbas.mbr_seq = #{mbrSeq}
+		  ) AS minfo on 1=1
+		 WHERE sbas.spot_dev_seq = ${spotDevSeq} AND sbas.svc_tgt_seq = ${svcTgtSeq}
+	</select>	
+	
+</mapper>
+
+

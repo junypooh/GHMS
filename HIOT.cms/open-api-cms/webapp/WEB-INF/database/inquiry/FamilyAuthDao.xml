@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kt.giga.home.cms.inquiry.dao.FamilyAuthDao">
+
+	<sql id="familyAuthList">
+		(
+			SELECT A.*, E.fd_memo AS "unitSvcNm"
+			FROM (
+				SELECT
+					C.MBR_ID AS "etsMbrId"
+					, A.ETS_MBR_SEQ AS "etsMbrSeq"
+					, B.TEL_NO AS "etsTelNo"
+					, E.MBR_ID AS "mbrId"
+					, A.MBR_SEQ AS "mbrSeq"
+					, D.TEL_NO AS "telNo"
+					, A.UNIT_SVC_CD AS "unitSvcCd"
+					, MAX(A.CRET_DT) AS "cretDt"
+				FROM SVC_ETS_REL A
+				, SVC_TGT_CONN_BAS B
+				, MBR_BAS C
+				, SVC_TGT_CONN_BAS D
+				, MBR_BAS E
+				WHERE A.ETS_MBR_SEQ = B.MBR_SEQ
+				AND A.ETS_MBR_SEQ = C.MBR_SEQ
+				AND A.MBR_SEQ = D.MBR_SEQ
+				AND A.MBR_SEQ = E.MBR_SEQ
+				GROUP BY C.MBR_ID, A.ETS_MBR_SEQ, B.TEL_NO, E.MBR_ID, A.MBR_SEQ, D.TEL_NO, A.UNIT_SVC_CD
+				ORDER BY "cretDt" DESC
+			) AS A
+			LEFT OUTER JOIN tb_code E
+			ON "unitSvcCd" = E.fd_name 
+			AND E.fd_up_code = '1200'
+		) AS pnsSet
+		
+	</sql>
+	
+	<sql id="where">
+	
+ 		<trim prefix="WHERE" prefixOverrides="AND || OR ">
+ 		
+ 			<if test="searchStartDate != null and searchStartDate != '' and searchEndDate != null and searchEndDate != ''">
+				AND "cretDt" BETWEEN #{searchStartDate} AND #{searchEndDate} 
+			</if>
+			
+			<if test="cpCode != null and cpCode != ''">
+				AND "unitSvcCd" = #{cpCode}
+			</if>
+			
+			<if test="searchColumn != null and searchColumn != null and searchString != null and searchString != ''">
+				AND "${searchColumn}" LIKE '%' || #{searchString} || '%'
+			</if>
+
+		</trim>	
+	
+	</sql>
+	
+	<sql id="whereDetail">
+	
+ 		<trim prefix="WHERE" prefixOverrides="AND || OR ">
+ 		
+			<if test="cpCode != null and cpCode != ''">
+ 			AND "unitSvcCd" = #{cpCode}
+ 			</if>
+			<if test="etsMbrSeq != null and etsMbrSeq != ''">
+ 			AND "etsMbrSeq" = #{etsMbrSeq}
+ 			</if>
+			<if test="mbrSeq != null and mbrSeq != ''">
+ 			AND "mbrSeq" = #{mbrSeq}
+ 			</if>
+
+		</trim>	
+	
+	</sql>
+	
+	<select id="getCount" parameterType="Map" resultType="int">
+	
+ 		SELECT 	COUNT(*) AS cnt
+		FROM	<include refid="familyAuthList"/> 
+		<include refid="where"/>
+
+	</select>
+	
+	<select id="getList" parameterType="Map" resultType="Map">
+	
+		SELECT *
+		FROM <include refid="familyAuthList"/> 
+		<include refid="where"/>
+		LIMIT ${pageSize} OFFSET (#{page} - 1) * #{pageSize}
+	</select>
+	
+	<select id="getDetail" parameterType="Map" resultType="Map">
+	
+		SELECT *
+		FROM <include refid="familyAuthList"/> 
+		<include refid="whereDetail"/>
+	</select>
+	
+	<select id="getAuthDetail" parameterType="Map" resultType="Map">
+		SELECT
+			C.DEV_NM AS "devNm"
+		FROM SVC_ETS_REL A
+		, SVC_TGT_BAS B
+		, SPOT_DEV_BAS C
+		, DEV_MODEL_BAS D
+		 , MBR_SPOT_DEV_SETUP_TXN E
+		WHERE A.SVC_TGT_SEQ = B.SVC_TGT_SEQ
+		AND B.SVC_TGT_SEQ = C.SVC_TGT_SEQ
+		AND C.DEV_MODEL_SEQ = D.DEV_MODEL_SEQ
+		AND A.DSTR_CD = E.DSTR_CD
+		AND A.SVC_THEME_CD = E.SVC_THEME_CD
+		AND A.UNIT_SVC_CD = E.UNIT_SVC_CD
+		AND C.SVC_TGT_SEQ = E.SVC_TGT_SEQ
+		AND C.SPOT_DEV_SEQ = E.SPOT_DEV_SEQ
+		AND A.ETS_MBR_SEQ = E.MBR_SEQ
+		AND A.ETS_MBR_SEQ = #{etsMbrSeq}
+		AND A.MBR_SEQ = #{mbrSeq}
+		AND A.UNIT_SVC_CD = #{cpCode}
+		AND B.SVC_TGT_TYPE_CD = #{svcTgtTypeCd}
+		AND C.USE_YN = 'Y'
+		AND C.DEL_YN = 'N'
+		AND D.DEV_TYPE_CD = #{deviceTypeCd}
+		AND E.GROUP_SETUP_CD = 'A902'
+		AND E.SETUP_CD = '003'
+	</select>
+
+</mapper>

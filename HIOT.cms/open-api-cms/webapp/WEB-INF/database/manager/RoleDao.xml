@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kt.giga.home.cms.manager.dao.RoleDao">
+
+	<sql id="role">
+	
+		(
+			SELECT 
+				pk_role AS "role"
+			,	fd_name AS "name"
+			,	fd_description AS "description"
+			,	fd_use_yn AS "useYN"
+			FROM tb_role 
+		) AS role
+					
+	</sql>
+	
+	<select id="get" parameterType="Role" resultType="Role">
+	
+		SELECT * FROM <include refid="role"/> WHERE "role" = #{role} 
+	
+	</select>
+
+	<select id="getTotalList" parameterType="Role" resultType="Role">
+	
+		SELECT * FROM <include refid="role"/> ORDER BY "role" DESC
+		
+	</select>
+	
+	<select id="getListByID" parameterType="String" resultType="Role">
+
+		SELECT * FROM <include refid="role"/> 
+		WHERE "role" IN (SELECT fk_admin_id FROM tb_admin_role WHERE fk_admin_id = #{id})	
+	
+	</select>
+	
+	<insert id="register" parameterType="Role">
+	
+		INSERT INTO tb_role (
+			fd_name
+		,	fd_description
+		,	fd_use_yn		
+		)
+		VALUES (
+			#{name}
+		,	#{description}
+		,	#{useYN}
+		)
+	
+		<selectKey keyProperty="role" resultType="int" order="AFTER">
+			SELECT currval('seq_role')
+		</selectKey>	
+			
+	</insert>
+	
+	<update id="modify" parameterType="Role">
+	
+		UPDATE tb_role
+		<trim prefix="SET" prefixOverrides=",">
+			<if test="name != null and name != ''">, fd_name = #{name}</if>
+			<if test="description != null">, fd_description = #{description}</if>
+			<if test="useYN != null and useYN != ''">, fd_use_yn = #{useYN}</if>		
+		</trim>
+		WHERE pk_role = #{role}
+		
+	</update>
+	
+	<delete id="remove" parameterType="Role">
+	
+		DELETE FROM tb_role WHERE pk_role = #{role}
+		
+	</delete>	
+	
+</mapper>

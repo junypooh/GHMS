@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kt.giga.home.cms.manage.dao.VerAppDao">
+
+ 
+ 	<sql id= "verApp">
+ 	(
+ 		SELECT 
+ 				pk_version_app AS "pk"
+ 			,	fd_admin_name AS "adminName"
+ 			,	fd_cp_code AS "cpCode"
+ 			,	fd_os_code AS "osCode"
+ 			,	fd_phone_type_code AS "phCode"
+ 			,	fd_ver_num	AS "verNum"
+ 			,	fd_ver_title AS "verTitle"
+ 			,	fd_ver_memo AS "verMemo"
+ 			,	fd_mandatory_yn AS "mandatoryYN"
+ 			,	fd_writer_id as "writerId"
+ 			,	n.fd_regdate AS "regDate" 	
+ 			FROM tb_version_app AS n 
+			LEFT OUTER JOIN (SELECT pk_admin_id, fd_admin_name FROM tb_admin) AS a 
+			ON n.fd_writer_id = a.pk_admin_id
+			WHERE n.fd_cp_code IN (SELECT fk_cp_code FROM tb_admin_svc WHERE fk_admin_id = #{id})				
+ 	 	) AS verApp
+ 	</sql>
+ 	
+	<sql id="where">
+	
+		<trim prefix="WHERE" prefixOverrides="AND || OR ">
+			<if test="cpCode != null and cpCode != ''">
+				"cpCode" = #{cpCode}
+			</if>
+			<if test="osCode != null and osCode != ''">
+				AND "osCode" = #{osCode}
+			</if>
+		</trim>	
+		
+	</sql>
+	
+	<select id="getCount" parameterType="Map" resultType="int">
+	
+		SELECT COUNT(pk) cnt 
+		FROM <include refid="verApp"/> 
+		<include refid="where"/>
+		
+	</select>
+	
+	<select id="getPreorderCount" parameterType="String" resultType="int">
+	
+		SELECT COUNT(pk_version_app) cnt FROM tb_version_app 
+	
+	</select> 
+	
+	<select id="get" parameterType="Map" resultType="Map">
+	
+		SELECT 
+			"pk"
+		,	"cpCode"
+		,	"osCode"	<!-- OS -->
+		,	"verNum"	<!-- app버전 -->
+		,	"phCode"	<!-- 단말 -->
+		,	"mandatoryYN" <!-- 업데이트 필수 여부 -->
+		,	"verMemo" 	<!-- 버전 설명  -->
+		,	"writerId" 		<!-- 버전 설명 -->
+		FROM <include refid="verApp"/>  
+		WHERE "pk" = #{pk} 
+		<if test="cpCode != null and cpCode != ''"> AND "cpCode" = #{cpCode}</if>
+		<if test="osCode != null and osCode != ''"> AND "osCode" = #{osCode}</if>
+	</select>
+
+	<select id="getList" parameterType="Map" resultType="Map">
+	
+		SELECT * 
+		FROM (
+			SELECT * FROM <include refid="verApp"/>
+			<include refid="where"/> 
+			ORDER BY "pk" DESC
+		) AS verApp 
+		<if test="page != null and page != '' and pageSize != null and pageSize != ''">LIMIT ${pageSize} OFFSET (#{page} - 1) * #{pageSize}</if>
+			
+	</select>
+	
+	<!-- 버전 업데이트 여부 체크  -->
+	<select id= "verAppUpdateCheck" parameterType="Map" resultType="String"> 
+		SELECT fd_ver_num AS "verNum"
+		FROM tb_version_app
+		WHERE 	
+		<if test="cpCode != null and cpCode != ''">fd_cp_code = #{cpCode}</if>
+		<if test="osCode != null and osCode != ''">AND fd_os_code = #{osCode}</if>
+		<if test="phCode != null and phCode != ''">AND fd_phone_type_code = #{phCode}</if>
+		ORDER BY fd_regdate DESC
+		LIMIT 1 
+	</select>
+	
+	<select id="getLastVer" parameterType="Map" resultType="String">
+	
+		SELECT 	fd_ver_num AS "verNum"
+		FROM 	tb_version_app
+		WHERE 	fd_cp_code = #{cpCode}
+					AND fd_os_code = #{osCode}
+					AND fd_phone_type_code = #{phCode}
+		ORDER BY fd_regdate DESC
+		LIMIT 1
+	
+	</select>
+	
+	<insert id="register" parameterType="Map">
+	
+		INSERT INTO tb_version_app(
+			fd_cp_code
+		,	fd_os_code
+		,	fd_phone_type_code
+		,	fd_mandatory_yn
+		,	fd_ver_num
+		,	fd_ver_memo
+		,	fd_writer_id
+		,	fd_writer_ip
+		,	fd_regdate	
+		)
+		VALUES(
+			#{cpCode}
+		,	#{osCode}
+		,	#{phCode}
+		,	#{mandatoryYN}
+		,	#{verNum}
+		,	#{verMemo}
+		,	#{writerId}		
+		,	#{writerIp}		
+		,	#{regDate}
+		
+		)
+		
+		<selectKey keyProperty="pk" resultType="int" order="AFTER">
+			SELECT currval('seq_version_app') 
+		</selectKey>			
+		
+	</insert>
+
+	<update id="modify" parameterType="Map">
+	
+		UPDATE tb_version_app SET 
+			fd_ver_memo = #{verMemo}
+			,	fd_modifier_id = #{modifierId}
+			,	fd_modifier_ip = #{modifierIp}
+			,	fd_update_date = #{updateDate}
+		WHERE pk_version_app = #{pk}
+	
+	</update>
+
+	<delete id="remove" parameterType="Map">
+	
+		DELETE FROM tb_version_app 
+		WHERE pk_version_app = #{pk}  		
+	
+	</delete>
+</mapper>

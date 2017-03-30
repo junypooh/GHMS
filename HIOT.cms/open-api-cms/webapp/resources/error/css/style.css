@@ -1,0 +1,14 @@
+@charset "utf-8";
+body,input,textarea,select,button,table,h1,h2,h3,h4,h5{font-family:"맑은 고딕",HelveticaNeue-Light,AppleSDGothicNeo-Light,sans-serif;} /* 2015-02-06 추가 */
+body {position:relative;background:#fff;font-size: 0.875em;color: #333;}
+
+#wrap {position: relative;height:100%;padding:0 1.143em;text-align: center;}
+
+.img img {width:100%;max-width:328px;}
+
+h1 {margin-bottom: 0;font-weight: normal;font-size: 2em;color: #f12939;letter-spacing: -0.04em;}
+h1.error {font-size: 1.429em;}
+p {letter-spacing: -0.04em;}
+.h1_txt {margin-top: 1em;}
+.cont_txt {margin-top: 2em;}
+.detail_txt {font-weight: 600;margin-top: 2em;}

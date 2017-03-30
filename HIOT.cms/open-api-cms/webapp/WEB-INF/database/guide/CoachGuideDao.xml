@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kt.giga.home.cms.guide.dao.CoachGuideDao">
+
+	<sql id="coach">
+		(
+			SELECT 
+			
+				pk_guide_coach AS "pk"
+			,	fd_cp_code AS "cpCode"
+			,	fd_admin_name AS "adminName"
+			,	fd_position_code AS "positionCode"
+			,	fd_title AS "title"
+			,	fd_ver_num AS "verNum"
+			,	fd_open_yn AS "openYN"
+			,	fd_writer_id AS "writerId"
+			,	TO_CHAR(fd_regdate, 'YYYYMMDD') AS "regDate"
+			<!-- 
+			,	fd_hdpi_path AS "hdpiPath"
+			,	fd_hdpi_size AS "hdpiSize"
+			,	fd_hdpi_org_name AS "hdpiOrgName"
+			,	fd_hdpi_save_name AS "hdpiSaveName"
+			,	fd_xhdpi_path AS "xhdpiPath"
+			,	fd_xhdpi_size AS "xhdpiSize"
+			,	fd_xhdpi_org_name AS "xhdpiOrgName"
+			,	fd_xhdpi_save_name AS "xhdpiSaveName"
+			,	fd_xxhdpi_path AS "xxhdpiPath"
+			,	fd_xxhdpi_size AS "xxhdpiSize"
+			,	fd_xxhdpi_org_name AS "xxhdpiOrgName"
+			,	fd_xxhdpi_save_name AS "xxhdpiSaveName"
+			 -->
+			
+			FROM tb_guide_coach AS n 
+			LEFT OUTER JOIN (SELECT pk_admin_id, fd_admin_name FROM tb_admin) AS a 
+			ON n.fd_writer_id = a.pk_admin_id
+			WHERE n.fd_cp_code IN (SELECT fk_cp_code FROM tb_admin_svc WHERE fk_admin_id = #{id})
+		) AS guide 	
+			
+	</sql>
+
+	<sql id="where">
+	
+		<trim prefix="WHERE" prefixOverrides="AND || OR ">
+			<if test="cpCode != null and cpCode != ''">
+				"cpCode" = #{cpCode}
+			</if>
+			<if test="positionCode != null and positionCode != ''">
+				AND "positionCode" = #{positionCode}
+			</if>
+			<if test="searchColumn != null and searchColumn != '' and searchString != null and searchString != ''">
+				AND "${searchColumn}" LIKE '%' || #{searchString} || '%'
+			</if>
+		</trim>	
+		
+	</sql>
+	
+	<select id="getCount" parameterType="Map" resultType="int">
+	
+		SELECT COUNT(pk) cnt 
+		FROM <include refid="coach"/> 
+		<include refid="where"/>
+		
+	</select>
+
+	<select id="getList" parameterType="Map" resultType="Map">
+	
+		SELECT * 
+		FROM (
+			SELECT * FROM <include refid="coach"/>
+			<include refid="where"/> 
+			ORDER BY "pk" DESC
+		) AS guide 
+		LIMIT ${pageSize} OFFSET (#{page} - 1) * #{pageSize}
+		
+	</select>
+	
+	<update id="updateOpenYN" parameterType="Map">
+	
+		UPDATE tb_guide_coach SET fd_open_yn = #{openYN} 
+		WHERE pk_guide_coach = #{pk} 
+	
+	</update>
+	
+	<update id="updateAllOpenYN" parameterType="Map">
+	
+		UPDATE tb_guide_coach SET fd_open_yn = 'N'
+		WHERE 	fd_cp_code = #{targetCpCode}
+		AND 	fd_ver_num = #{verNum}
+		AND   fd_position_code = #{targetPositionCode}
+		<if test="pk != null and pk != ''">AND pk_guide_coach != #{pk} </if>
+	
+	</update>
+	
+	<!-- 
+	<select id="getLastVer" parameterType="Map" resultType="String">
+	
+		SELECT 	fd_ver_num AS "verNum"
+		FROM 	tb_guide_coach
+		WHERE 	fd_cp_code = #{cpCode}
+					AND fd_position_code = #{positionCode}
+		ORDER BY fd_regdate DESC
+		LIMIT 1
+	
+	</select>
+	 -->
+	 
+	 <select id="getCheckDataCount" parameterType="Map" resultType="int">
+	 
+	 	SELECT COUNT(pk_guide_coach) cnt 
+		FROM tb_guide_coach 
+		WHERE 	fd_cp_code = #{cpCode}
+					AND fd_ver_num = #{verNum}
+					AND fd_position_code = #{positionCode}
+	 
+	 </select>
+	 
+	 <select id="getVersionList" parameterType="Map" resultType="Map">
+	 
+	 	SELECT * FROM tb_version_app
+		WHERE fd_cp_code = #{cpCode} AND fd_os_code = '1701' AND fd_phone_type_code = '1801'
+	 
+	 </select>
+	
+	<select id="get" parameterType="Map" resultType="Map">
+	
+		SELECT 
+			"pk"
+		,	"cpCode"
+		,	"verNum"
+		,	"writerId"
+		,	"adminName"
+		,	"regDate"
+		,	"title"
+		,	"positionCode"
+		,	"openYN"
+		<!-- 
+		,	"hdpiPath"
+		,	"hdpiSize"
+		,	"hdpiOrgName"
+		,	"hdpiSaveName"
+		,	"xhdpiPath"
+		,	"xhdpiSize"
+		,	"xhdpiOrgName"
+		,	"xhdpiSaveName"
+		,	"xxhdpiPath"
+		,	"xxhdpiSize"
+		,	"xxhdpiOrgName"
+		,	"xxhdpiSaveName"
+		 -->
+		FROM <include refid="coach"/>  
+		WHERE "pk" = #{pk} 
+		<if test="cpCode != null and cpCode != ''"> AND "cpCode" = #{cpCode}</if>
+	
+	</select>
+	
+	<delete id="remove" parameterType="Map">
+	
+		DELETE FROM tb_guide_coach
+		WHERE pk_guide_coach = #{pk}  
+	
+	</delete>
+	
+	<insert id="register" parameterType="Map">
+	
+		INSERT INTO tb_guide_coach(
+			fd_cp_code
+		,	fd_position_code
+		,	fd_title
+		,	fd_ver_num
+		,	fd_open_yn
+		,	fd_writer_id
+		,	fd_writer_ip
+		,	fd_regdate
+		<!-- 
+		,	fd_hdpi_path
+		,	fd_hdpi_size
+		,	fd_hdpi_org_name
+		,	fd_hdpi_save_name
+		,	fd_xhdpi_path
+		,	fd_xhdpi_size
+		,	fd_xhdpi_org_name
+		,	fd_xhdpi_save_name
+		,	fd_xxhdpi_path
+		,	fd_xxhdpi_size
+		,	fd_xxhdpi_org_name
+		,	fd_xxhdpi_save_name
+		-->
+		)
+		VALUES(
+			#{cpCode}
+		,	#{positionCode}
+		,	#{title}
+		,	#{verNum}
+		,	#{openYN}
+		,	#{writerId}
+		,	#{writerIp}
+		,	#{regDate}
+		<!-- 
+		,	#{hdpiPath}
+		,	#{hdpiSize}
+		,	#{hdpiOrgName}
+		,	#{hdpiSaveName}
+		,	#{xhdpiPath}
+		,	#{xhdpiSize}
+		,	#{xhdpiOrgName}
+		,	#{xhdpiSaveName}
+		,	#{xxhdpiPath}
+		,	#{xxhdpiSize}
+		,	#{xxhdpiOrgName}
+		,	#{xxhdpiSaveName}
+		-->
+		)
+		
+		<selectKey keyProperty="pk" resultType="int" order="AFTER">
+			SELECT currval('seq_guide_coach') 
+		</selectKey>			
+	
+	</insert>
+	
+	<update id="modify" parameterType="Map">
+	
+		UPDATE tb_guide_coach SET 
+			fd_open_yn				= #{openYN}
+		,	fd_modifier_id			= #{modifierId}
+		,	fd_modifier_ip			= #{modifierIp}
+		,	fd_update_date		= #{updateDate}
+		<!-- 
+		<if test="hdpiPath != null and hdpiPath != '' and hdpiSize != null and hdpiSize != '' and hdpiOrgName != null and hdpiOrgName != '' and hdpiSaveName != null and hdpiSaveName != ''"> 
+			, fd_hdpi_path = #{hdpiPath}
+			, fd_hdpi_size = #{hdpiSize}
+			, fd_hdpi_org_name = #{hdpiOrgName}
+			, fd_hdpi_save_name = #{hdpiSaveName}
+		</if>
+		<if test="xhdpiPath != null and xhdpiPath != '' and xhdpiSize != null and xhdpiSize != '' and xhdpiOrgName != null and xhdpiOrgName != '' and xhdpiSaveName != null and xhdpiSaveName != ''"> 
+			, fd_xhdpi_path = #{xhdpiPath}
+			, fd_xhdpi_size = #{xhdpiSize}
+			, fd_xhdpi_org_name = #{xhdpiOrgName}
+			, fd_xhdpi_save_name = #{xhdpiSaveName}
+		</if>
+		<if test="xxhdpiPath != null and xxhdpiPath != '' and xxhdpiSize != null and xxhdpiSize != '' and xxhdpiOrgName != null and xxhdpiOrgName != '' and xxhdpiSaveName != null and xxhdpiSaveName != ''"> 
+			, fd_xxhdpi_path = #{xxhdpiPath}
+			, fd_xxhdpi_size = #{xxhdpiSize}
+			, fd_xxhdpi_org_name = #{xxhdpiOrgName}
+			, fd_xxhdpi_save_name = #{xxhdpiSaveName}
+		</if> 
+		-->
+		
+		WHERE pk_guide_coach = #{pk}
+	
+	</update>
+
+</mapper>

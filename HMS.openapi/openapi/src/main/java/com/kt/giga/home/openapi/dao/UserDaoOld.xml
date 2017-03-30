@@ -1,0 +1,388 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kt.giga.home.openapi.dao.UserDaoOld">
+
+
+	<!-- 서비스대상 일련번호 생성 -->
+	<select id="getMbrsSeq" resultType="int">
+		SELECT NEXTVAL('SEQ_MBRS_BAS')
+	</select>
+
+	<!-- 홈헬스케어 우저 유무 확인 -->
+<!-- 	<select id="getUserCnt" resultType="int" parameterType="string">
+		SELECT COUNT(MBRS_SEQ) FROM MBRS_BAS WHERE MBRS_ID = #{telNo}
+	</select> -->
+
+	<!-- 법정대리인 동의여부 조회 -->
+	<select id="getParentsAgree" resultType="int" parameterType="AppUser">
+		SELECT COUNT(*) 
+		FROM 
+			TB_PARENTS_AGREE 
+		WHERE 
+			MBRS_SEQ = #{strMbrsSeq} 
+			AND FK_CP_CODE = #{svcCode}
+	</select>
+
+	<!-- 약관동의여부 조회 -->
+	<select id="getTermsYn" parameterType="AppUser" resultType="Terms">
+	SELECT 
+			A.*
+			,B.fd_agree_yn
+		FROM 
+			tb_terms AS A
+			LEFT JOIN (
+				SELECT fk_terms, fd_agree_yn
+				FROM tb_terms_agree 
+				WHERE
+					pk_terms_agree IN (
+						SELECT MAX(pk_terms_agree)
+						FROM tb_terms_agree
+						WHERE mbrs_seq =  #{strMbrsSeq}
+						GROUP BY fk_terms
+					)
+			) AS B ON (A.pk_terms=B.fk_terms)
+		WHERE 
+			A.fk_cp_code	=  #{svcCode}
+			AND b.fd_agree_yn = 'N'
+			AND A.fd_terms_ver IN (
+				SELECT MAX(fd_terms_ver)
+				FROM tb_terms
+				WHERE fk_cp_code =  #{svcCode}
+				GROUP BY fk_terms_code
+			)
+	</select>
+
+	<!-- 기존에 존재하는 회원정보 select -->
+	<select id="getUserBase" resultType="AppUser" parameterType="string">
+		SELECT 
+		    MBRS_SEQ AS mbrsSeq,
+			MBRS_ID AS mbrsId
+		FROM  	
+			MBRS_BAS
+		WHERE MBRS_ID = #{userId}
+	</select>
+
+	<!-- 신규 회원 insert -->
+	
+	<insert id="insertUserBase" parameterType="AppUser">
+		INSERT INTO SVC_TGT_BAS (
+			SVC_TGT_SEQ, 
+			SVC_TGT_TYPE_CD, 
+			SVC_TGT_NM, 
+			OPRT_STTUS_CD, 
+			UNIT_SVC_CD, 
+			DSTR_CD, 
+			SVC_THEME_CD, 
+			OLD_ZIPCD, 
+			SVC_TGT_ID, 
+			CRET_DT
+		)
+		VALUES (
+			#{svcTgtSeq}, 
+			'1',
+			'svc_tgt_nm',
+			'1',
+			'1',
+			'1',
+			'1',
+			'1',
+			#{custId}, 
+			now()
+		)
+	</insert>
+
+	
+	<!-- 회원 인증정보 insert -->
+	
+	<insert id="insertUserAuth" parameterType="AppUser">
+		INSERT INTO SVC_TGT_ATHN_REL(
+			SVC_TGT_SEQ, 
+			SVC_TGT_ATHN_ID,
+			CREDENTIAL_ID
+		)
+		VALUES (
+			#{svcTgtSeq},
+			#{userId},
+			#{credentailId}
+		)		
+	</insert>
+	
+	<!--  mbrs_bas insert -->
+	
+	<insert id="insertMbrsBas" parameterType="AppUser">
+		INSERT INTO MBRS_BAS (
+			MBRS_SEQ,
+			MBRS_ID,
+			CREDENTIAL_ID 
+		)
+		VALUES (
+			#{mbrsSeq}, 
+			#{userId},
+			#{credentialId}
+		)
+	</insert>
+
+		<!--  svc_mbrs_rel insert -->
+	
+	<insert id="insertSvcMbrsRel" parameterType="AppUser">
+		INSERT INTO SVC_MBRS_REL (
+			MBRS_SEQ,
+			DSTR_CD,
+			SVC_THEME_CD,
+			UNIT_SVC_CD 
+		)
+		VALUES (
+			#{mbrsSeq}, 
+			#{dstrCd},
+			#{svcThemeCd},
+			#{unitSvcCd}
+		)
+	</insert>
+	
+		<!--  svc_tgt_accs_bas insert -->
+	
+	<insert id="insertSvcTgtAccsBas" parameterType="AppUser">
+		INSERT INTO SVC_TGT_ACCS_BAS (
+			CONN_TERML_ID,
+			MBRS_SEQ,
+			DSTR_CD,
+			SVC_THEME_CD,
+			UNIT_SVC_CD,
+			SVC_TGT_ACCS_NM,
+			PNS_REG_ID,
+			APPL_VER,
+			TEL_NO 
+		)
+		VALUES (
+			#{connTermlId},
+			#{mbrsSeq}, 
+			#{dstrCd},
+			#{svcThemeCd},
+			#{unitSvcCd},
+			'',
+			#{pnsRegId},
+			'',
+			#{telNo}
+		)
+	</insert>
+
+		<!--  svc_accs_hst insert -->
+	
+	<insert id="insertSvcAccsHst" parameterType="AppUser">
+		INSERT INTO SVC_ACCS_HST (
+			CONN_TERML_ID,
+			MBRS_SEQ,
+			DSTR_CD,
+			SVC_THEME_CD,
+			UNIT_SVC_CD,
+			ACCS_HST_SBST,
+			ACCS_DT
+		)
+		VALUES (
+			#{connTermlId},
+			#{mbrsSeq}, 
+			#{dstrCd},
+			#{svcThemeCd},
+			#{unitSvcCd},
+			"",
+			NOW()
+		)
+	</insert>
+	
+		<!--  svc_tgt_accs_ahtn_txn insert -->
+	
+	<insert id="insertSvcTgtAccsAthnTxn" parameterType="AppUser">
+		INSERT INTO SVC_TGT_ACCS_ATHN_TXN (
+			CONN_TERML_ID,
+			MBRS_SEQ,
+			DSTR_CD,
+			SVC_THEME_CD,
+			UNIT_SVC_CD,
+			ATHN_TOKN_VAL,
+			PBLS_DT
+		)
+		VALUES (
+			#{connTermlId},
+			#{mbrsSeq}, 
+			#{dstrCd},
+			#{svcThemeCd},
+			#{unitSvcCd},
+			#{athnToknVal},
+			NOW()
+		)
+	</insert>
+
+	<!-- 온라인 앱접속자 수 select -->
+	<select id="getOnlineAppUserCount" resultType="int" parameterType="AppUser">
+		<![CDATA[
+		SELECT 
+			COUNT(1)
+		FROM 
+			MBRS_BAS		        AS MB,
+			SVC_MBRS_REL 	        AS REL,
+			SVC_TGT_ACCS_BAS	    AS BAS,
+			SVC_TGT_ACCS_ATHN_TXN	AS TXN
+		WHERE
+			MB.MBRS_SEQ       = REL.MBRS_SEQ AND
+			REL.MBRS_SEQ      = BAS.MBRS_SEQ AND
+			BAS.MBRS_SEQ      = TXN.MBRS_SEQ AND
+			REL.MBRS_SEQ      = #{mbrsSeq} AND
+			REL.DSTR_CD       = #{dstrCd} AND
+			REL.SVC_THEME_CD  = #{svcThemeCd} AND
+			REL.UNIT_SVC_CD   = #{unitSvcCd} AND
+			BAS.CONN_TERML_ID = #{connTermlId} AND
+			TXN.PBLS_DT < CURRENT_TIMESTAMP - interval '${expireTimeMinute} minute'
+		]]>
+	</select>
+	
+	<!-- 청약정보 체크 -->
+	<select id="chkCustId" resultType="int" parameterType="string">
+		<![CDATA[
+		SELECT COUNT(*)
+		FROM SVC_TGT_BAS
+		WHERE SVC_TGT_ID = #{custId}
+		]]>
+	</select>
+	
+	<!-- 앱 접속자 select -->
+	
+	<select id="getAppUser" resultType="AppUser" parameterType="string">
+		SELECT
+			TGT.SVC_TGT_SEQ			AS "svcTgtSeq",
+			REL.SVC_TGT_ATHN_ID		AS "userId"
+		FROM
+			SVC_TGT_BAS				AS TGT,
+			SVC_TGT_ATHN_REL		AS REL,
+			SVC_TGT_ACCS_BAS		AS ACC,
+			SVC_TGT_ACCS_ATHN_TXN	AS TOK
+		WHERE
+			TGT.SVC_TGT_SEQ			= REL.SVC_TGT_SEQ		AND
+			REL.SVC_TGT_SEQ 		= ACC.SVC_TGT_SEQ	 	AND
+			REL.SVC_TGT_ATHN_ID 	= ACC.SVC_TGT_ATHN_ID 	AND
+			ACC.SVC_TGT_SEQ 		= TOK.SVC_TGT_SEQ 		AND
+			ACC.TERML_ID 			= TOK.TERML_ID 			AND
+			ACC.SVC_TGT_ATHN_ID 	= TOK.SVC_TGT_ATHN_ID 	AND
+			REL.SVC_TGT_ATHN_ID 	= #{userId} 			AND
+			ACC.TERML_ID 			= #{deviceId}
+	</select>
+
+
+	<!-- 앱 접속자 insert -->
+	
+	<insert id="insertAppUser" parameterType="AppUser">
+		INSERT INTO SVC_TGT_ACCS_BAS(
+			TERML_ID,
+			SVC_TGT_SEQ,
+			SVC_TGT_ATHN_ID,
+			SVC_TGT_ACCS_NM,
+			PNS_REG_ID,
+			APPL_VER,
+			TEL_NO
+		)
+		VALUES (
+			#{deviceId},
+			#{svcTgtSeq},
+			#{userId},
+			'',
+			#{pnsRegId},
+			#{appVer},
+			#{telNo}
+		)
+	</insert>
+	
+	
+	<!-- 앱 접속자 update -->
+	
+	<update id="updateAppUser" parameterType="AppUser">
+		UPDATE SVC_TGT_ACCS_BAS SET
+			PNS_REG_ID		= #{pnsRegId},
+			TEL_NO 			= #{telNo},
+			APPL_VER 		= #{appVer}
+		WHERE
+			TERML_ID 		= #{deviceId}	AND
+			SVC_TGT_ATHN_ID	= #{userId} 	AND
+			SVC_TGT_SEQ 	= #{svcTgtSeq}
+	</update>
+
+	
+	<!-- 앱 접속자 토큰 insert -->
+	
+	<insert id="insertAppUserToken" parameterType="AppUser">
+		INSERT INTO SVC_TGT_ACCS_ATHN_TXN (
+			TERML_ID,
+			SVC_TGT_ATHN_ID,			
+			SVC_TGT_SEQ,
+			ATHN_TOKN_VAL,
+			PBLS_DT
+		)
+		VALUES (
+			#{deviceId},
+			#{userId},			
+			#{svcTgtSeq},
+			#{authToken},
+			now()
+		)
+	</insert>
+	
+	
+	<!-- 앱 접속자 토큰 update -->
+	<update id="updateSvcTgtAccsAthnTxn" parameterType="AppUser">	
+		UPDATE SVC_TGT_ACCS_ATHN_TXN SET 
+			ATHN_TOKN_VAL = #{athnToknVal},
+			PBLS_DT = NOW()
+		WHERE 
+			CONN_TERML_ID = #{connTermlId}    AND
+			MBRS_SEQ      = #{mbrsSeq}        AND
+			DSTR_CD       = #{dstrCd}         AND
+			SVC_THEME_CD  = #{svcThemeCd}     AND
+			UNIT_SVC_CD   = #{unitSvcCd} 
+	</update>
+
+	<!-- 서비스대상접속기본 update -->
+	<update id="updateSvcTgtAccsBas" parameterType="AppUser">	
+		UPDATE SVC_TGT_ACCS_BAS SET 
+			PNS_REG_ID = #{pnsRegId},
+			TEL_NO = #{telNo}
+		WHERE 
+			CONN_TERML_ID = #{connTermlId}    AND
+			MBRS_SEQ      = #{mbrsSeq}        AND
+			DSTR_CD       = #{dstrCd}         AND
+			SVC_THEME_CD  = #{svcThemeCd}     AND
+			UNIT_SVC_CD   = #{unitSvcCd} 
+	</update>
+
+	<!-- 서비스접속이력 update -->
+	<update id="updateSvcAccsHst" parameterType="AppUser">	
+		UPDATE SVC_ACCS_HST SET 
+			ACCS_HST_SBST = "",
+			ACCS_DT = NOW()
+		WHERE 
+			CONN_TERML_ID = #{connTermlId}    AND
+			MBRS_SEQ      = #{mbrsSeq}        AND
+			DSTR_CD       = #{dstrCd}         AND
+			SVC_THEME_CD  = #{svcThemeCd}     AND
+			UNIT_SVC_CD   = #{unitSvcCd}
+	</update>
+
+	<!-- 현장장치기본  update 유저 카메라 간 매칭 -->
+	<update id="updateSvcTgtBas" parameterType="AppUser">	
+		UPDATE SVC_TGT_BAS SET 
+			MBRS_SEQ = #{mbrsSeq}
+		WHERE 
+			SVC_TGT_ID   = #{custId}
+	</update>
+
+	<!-- 카메라 닉네임 update (Mapper XML 변경필요) -->
+	
+	<update id="updateDeviceName" parameterType="string">
+		UPDATE SPOT_DEV_BAS SET
+			DEV_NM = #{devNm}
+		WHERE
+			SPOT_DEV_ID = #{spotDevId}
+	</update>
+	
+	
+	
+
+</mapper>

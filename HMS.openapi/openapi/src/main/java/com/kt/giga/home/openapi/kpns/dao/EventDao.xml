@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kt.giga.home.openapi.kpns.dao.EventDao">
+	
+	<select id="getSpotDevBas" parameterType="Map" resultType="SpotDevBas">
+		SELECT A.svc_tgt_seq,
+			   A.spot_dev_seq
+		  FROM spot_dev_bas AS A
+	 	 WHERE A.dev_uu_id = #{dev_uu_id}
+	</select>
+	
+	<select id="getSpotDevExpnsnBas" parameterType="Map" resultType="SpotDevExpnsnBas">
+		SELECT A.svc_tgt_seq,
+			   A.spot_dev_seq
+		  FROM spot_dev_bas AS A
+	 LEFT JOIN spot_dev_expnsn_bas AS B ON A.svc_tgt_seq = B.svc_tgt_seq AND A.spot_dev_seq = B.spot_dev_seq 
+		 WHERE A.dev_uu_id = #{dev_uu_id}
+		   AND B.spot_dev_item_nm = #{spot_dev_item_nm}
+	</select>
+	
+	<select id="selectMsgTrmForwardTxn" resultType="Event">
+		SELECT mbr_seq,
+			   svc_tgt_seq,
+			   spot_dev_seq,
+			   pns_reg_id,
+			   tel_no,
+			   dstr_cd,
+			   svc_theme_cd,
+			   unit_svc_cd,
+			   setup_cd,
+			   msg_id,
+			   up_msg_id,
+			   msg_trm_sbst,
+			   msg_trm_fail_txn,
+			   msg_trm_forward_yn,
+			   msg_rcv_yn,
+			   msg_trm_dt,
+			   msg_retry_seq
+		  FROM msg_trm_forward_txn 
+		 WHERE msg_id IS NOT NULL
+		   AND msg_trm_forward_yn = 'Y'
+		   AND msg_rcv_yn = 'N'
+		   AND msg_trm_dt > now() - '1 day'::interval
+	</select>
+	
+	<select id="selectMsgTrmForwardTxnByMsgId" parameterType="Event" resultType="Event">
+		SELECT mbr_seq,
+			   svc_tgt_seq,
+			   spot_dev_seq,
+			   pns_reg_id,
+			   tel_no,
+			   dstr_cd,
+			   svc_theme_cd,
+			   unit_svc_cd,
+			   setup_cd,
+			   msg_id,
+			   up_msg_id,
+			   msg_trm_sbst,
+			   msg_trm_fail_txn,
+			   msg_trm_forward_yn,
+			   msg_rcv_yn,
+			   msg_trm_dt,
+			   msg_retry_seq
+		  FROM msg_trm_forward_txn 
+		 WHERE msg_id = #{msg_id}
+	</select>
+	
+	<select id="selectMsgTrmForwardTxnSeq" resultType="long">
+		SELECT NEXTVAL('SEQ_MSG_TRM_FORWARD_TXN')
+	</select>
+	
+	<insert id="insertMsgTrmForwardTxn" parameterType="Event">
+		INSERT INTO msg_trm_forward_txn (
+			mbr_seq,
+		    svc_tgt_seq,
+		    spot_dev_seq,
+		    pns_reg_id,
+		    tel_no,
+		    dstr_cd,
+		    svc_theme_cd,
+		    unit_svc_cd,
+		    setup_cd,
+		    msg_seq,
+		    msg_id,
+		    up_msg_id,
+		    msg_trm_sbst,
+		    msg_trm_fail_txn,
+		    msg_trm_forward_yn,
+		    msg_rcv_yn,
+		    msg_trm_dt,
+		    msg_retry_seq
+		) VALUES (
+			#{mbr_seq},
+			#{svc_tgt_seq},
+			#{spot_dev_seq},
+			#{pns_reg_id},
+			#{tel_no},
+			#{dstr_cd},
+			#{svc_theme_cd},
+			#{unit_svc_cd},
+			#{setup_cd},
+			#{msg_seq},
+			#{msg_id},
+			#{up_msg_id},
+			#{msg_trm_sbst},
+			#{msg_trm_fail_txn},
+			#{msg_trm_forward_yn},
+			'N',
+			now(),
+			#{msg_retry_seq}
+		)
+	</insert>
+	
+	<update id="updateMsgTrmForwardTxn" parameterType="Event">
+		UPDATE msg_trm_forward_txn 
+		   SET msg_rcv_yn = #{msg_rcv_yn},
+		   	   msg_rcv_dt = to_timestamp(#{msg_rcv_dt}, 'YYYYMMDDHH24MISS'),
+		   	   msg_rcv_fail_txn = #{msg_rcv_fail_txn}
+		 WHERE msg_id = #{msg_id}
+	</update>
+	
+	<insert id="insertSpotDevExpnsnBas" parameterType="SpotDevExpnsnBas">
+		INSERT INTO spot_dev_expnsn_bas (
+			svc_tgt_seq,
+			spot_dev_seq,
+			spot_dev_item_nm,
+			spot_dev_item_val
+		) VALUES (
+			#{svc_tgt_seq},
+			#{spot_dev_seq},
+			#{spot_dev_item_nm},
+			#{spot_dev_item_val}
+		)
+	</insert>
+	
+	<update id="updateSpotDevExpnsnBas" parameterType="SpotDevExpnsnBas">
+		UPDATE spot_dev_expnsn_bas 
+		   SET spot_dev_item_val = #{spot_dev_item_val}
+		 WHERE svc_tgt_seq = #{svc_tgt_seq}
+		   AND spot_dev_seq = #{spot_dev_seq}
+		   AND spot_dev_item_nm = #{spot_dev_item_nm}
+	</update>
+
+</mapper>

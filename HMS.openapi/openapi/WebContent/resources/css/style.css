@@ -1,0 +1,101 @@
+@charset "utf-8";
+
+body{font-size:0.875em; font-family: "돋움", Dotum, Helvetica, AppleGothic, Sans-serif; color:#444}
+#wrap{width:100%; overflow:hidden; background:#fff}
+#wrap .contents{margin:0.5714285714285714em 0}
+
+/* common */
+.list > li > a{position: relative; display: block; font-weight:bold}
+.list > li:hover{background-color:#eee}
+.pannel .list > li{padding:1.366666666666667em 6.38888888888889% 1.366666666666667em 20%; border-bottom: 1px solid #e6e6e6}
+.list.dir > li > a{background:url("../images/common/ico_gt.png") no-repeat scroll 100% 50% / 9px 16px rgba(0, 0, 0, 0)}
+.bu{padding-left:20px; background:url('../images/common/bul_dot.png') no-repeat 4px 0.7em / 2px 2px; line-height:1.785714285714286em}
+.caution{padding:1px 0; font-size:0.7857142857142857em; color:#999}
+.w100p{width:100%;}
+.btns{padding-top:2.2857142857142857142857142857143em; text-align:center}
+.btn{display: inline-block;padding:1.214285714285714em 15px; font-weight: bold; text-align: center; line-height:1em}
+.btn.btn_bg{background-color:#303030; border-radius:2px; color:#fff}
+
+/* 고객센터 */
+.customerCenter .list > .m01{background:url("../images/customer/ico_notice.png")no-repeat 5.83333333333333% 1.266666666666667em / 16px 20px}
+.customerCenter .list > .m02{background:url("../images/customer/ico_guide.png")no-repeat 5.83333333333333% 1.266666666666667em / 16px 20px}
+.customerCenter .list > .m03{background:url("../images/customer/ico_inquiry.png")no-repeat 5.83333333333333% 1.266666666666667em / 16px 20px}
+.customerCenter .list > .m04{background:url("../images/customer/ico_privacy.png")no-repeat 5.83333333333333% 1.266666666666667em / 16px 20px}
+.customerCenter .list > li:hover{background-color:#eee}
+
+/* list & view */
+.view .list > li{padding: 1.1428571428571428571428571428571em 6.38888888888889% 1.071428571428571em 4.44444444444444%; border-bottom: 1px solid #e6e6e6}
+.view .list > li dl{padding-right:2.3571428571428571428571428571429em}
+.view .list > li dl dt{font-size:1.0714285714285714285714285714286em; font-weight:bold}
+.view .list > li dl dt.new:after{display:inline-block;content:"";width:16px; height:16px; margin-left:8px; margin-bottom: -2px; background:url("../images/common/ico_new.png") no-repeat 0 0 / 16px 16px}
+.view .list > li dl dd{padding-top:0.5714285714285714em; color:#999}
+.view .list_detail{padding:1.321428571428571em 4.44444444444444% 1.142857142857143em}
+.view .list_detail p{text-align:left; line-height:1.785714285714286em; font-weight:bold}
+.view .list_detail ul{margin:1.8928592857142857142857142857143em 0; font-weight:bold}
+
+/* 고객센터_서비스안내 */
+.customerGuide .list > li{padding-left:4.44444444444444%}
+.customerGuide .dir.list > li > a{padding-right:2.3571428571428571428571428571429em}
+
+/* 작업공지 */
+.notify{position:relative; padding:1.714285714285714em 4.44444444444444% 1.142857142857143em}
+.notify .virtual_img{text-align:center}
+.notify .message_title{margin:2em 0 1.84375em; font-weight:bold; font-size:1.142857142857143em; text-align:center;line-height:1em}
+.notify .message_txt{display:block; font-size:0.875em; margin-top:0.57142857142857142857142857142857em; color:#999;text-align:center;line-height:1em}
+.notify p{text-align:left; line-height:1.785714285714286em; font-weight:bold}
+.notify > ul{margin:1.857142857142857em 0; font-weight:bold}
+
+/* 약관 */
+.terms_conditions{height:31.39285714285714em; overflow-x:hidden; overflow-y:scroll; font-weight:bold}
+.full_h .terms_conditions{height:100%; overflow-y:visible}
+
+/* 로그인 안내 */
+.notify.login_alert{padding-top:3.214285714285714em; padding-bottom:1.142857142857143em}
+.layerWrap{	border-radius: 4px;
+			-webkit-border-radius: 4px; -moz-border-radius: 4px;
+			-webkit-box-shadow: 0 2px 7px rgba(0,0,0,.24);
+			-moz-box-shadow: 0 2px 7px rgba(0,0,0,.24);
+			box-shadow: 0 2px 7px rgba(0,0,0,.24);
+			background-color:#fff;
+		}
+.layer_alert{	position:relative; overflow:hidden;
+			width:100%; height:100%;
+			-webkit-border-radius: 4px; -moz-border-radius: 4px; border-radius: 4px;
+			-webkit-box-shadow: 0 2px 7px rgba(0,0,0,.12);
+			-moz-box-shadow: 0 2px 7px rgba(0,0,0,.12);
+			box-shadow: 0 2px 7px rgba(0,0,0,.12);
+			background-color:#fff;
+		}
+.layer_alert p{padding:1.3214285714285714285714285714286em 0;  text-align:center}
+.layer_alert .twoColumn{border-top:2px solid #e6e6e6}
+.layer_alert .twoColumn li{width:50%; float:left}
+.layer_alert .twoColumn li:first-child{background:url("../images/common/ico_call_grey.png")no-repeat 1.428571428571429em 1.535714285714286em / 1.357142857142857em 1.357142857142857em}
+.layer_alert .twoColumn li:last-child{background:url("../images/common/ico_info_grey.png")no-repeat 1.428571428571429em 1.535714285714286em / 1.428571428571429em 1.428571428571429em; padding-top:0.7142857142857143em}
+.layer_alert .twoColumn li a{display:block; padding:1em 0 1em 34.250764525993883792048929663609%; vertical-align:middle; font-weight:bold}
+.layer_alert .twoColumn li:first-child a{background:url("../images/common/bg_bar_li.png")no-repeat right 1.321428571428571em / 2px 1.714285714285714em}
+.layer_alert .twoColumn li span{display:block; padding-top:0.7083333333333333em; font-size:0.85714285714285714285714285714286em; color:#999}
+.never_open{margin:1.535714285714286em 0; padding-left:0.2142857142857143em}
+.never_open input{margin-right:2.5em}
+
+@media screen and (max-width: 380px){
+.layer_alert .twoColumn li a{padding-left:26%; vertical-align:middle; font-weight:bold}
+.layer_alert .twoColumn li:first-child{background:url("../images/common/ico_call_grey.png")no-repeat 0.91em 1.535714285714286em / 1.357142857142857em 1.357142857142857em}
+.layer_alert .twoColumn li:last-child{background:url("../images/common/ico_info_grey.png")no-repeat 0.91em 1.535714285714286em / 1.428571428571429em 1.428571428571429em}
+}
+
+/* custom checkbox */
+input[type=checkbox] {display:none}
+input[type=checkbox] + label{
+	display:inline-block;
+	height: 1.285714285714286em
+	width: 1.285714285714286em;
+	padding: 2px 0 0 3.785714285714286em;
+	background:url("../images/common/bg_chk_default.png") no-repeat scroll 0 4px / 1.285714285714286em 1.285714285714286em;
+	}
+input[type=checkbox]:checked + label{
+	display:inline-block;
+	height: 1.285714285714286em
+	width: 1.285714285714286em;
+	padding: 2px 0 0 3.785714285714286em;
+	background:url("../images/common/bg_chk_yes.png") no-repeat scroll 0 4px / 1.285714285714286em 1.285714285714286em;
+	}

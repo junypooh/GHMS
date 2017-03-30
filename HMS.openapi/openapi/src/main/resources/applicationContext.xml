@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:task="http://www.springframework.org/schema/task"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:encryption="http://www.jasypt.org/schema/encryption"
+	xmlns="http://www.springframework.org/schema/beans"
+	xsi:schemaLocation="
+		http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
+		http://www.springframework.org/schema/mvc
+		http://www.springframework.org/schema/mvc/spring-mvc-3.1.xsd
+		http://www.springframework.org/schema/context
+		http://www.springframework.org/schema/context/spring-context-3.0.xsd
+		http://www.springframework.org/schema/task
+		http://www.springframework.org/schema/task/spring-task-3.0.xsd
+		http://www.springframework.org/schema/tx
+        http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+		http://www.springframework.org/schema/aop
+		http://www.springframework.org/schema/aop/spring-aop-3.0.xsd
+        http://www.jasypt.org/schema/encryption
+		http://www.jasypt.org/schema/encryption/jasypt-spring3-encryption-1.xsd
+	">
+
+	<!-- component auto scan -->
+	<context:component-scan base-package="com.kt.giga.home"/>
+
+	<!-- aop auto proxy -->
+	<aop:aspectj-autoproxy/>
+
+	<!-- annotation driven -->
+	<mvc:annotation-driven />
+	
+	<bean id="dataSource" class="org.springframework.jndi.JndiObjectFactoryBean">
+ 		<property name="jndiName" value="java:/jdbc/hcam"/>
+ 		<property name="resourceRef" value="true" />
+ 	</bean>
+
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+ 		<property name="dataSource" ref="dataSource" />
+ 		<property name="configLocation" value="classpath:mybatis-config.xml"/>
+ 	</bean>
+ 	
+ 	<bean id="sqlSession" class="org.mybatis.spring.SqlSessionTemplate">
+	  	<constructor-arg index="0" ref="sqlSessionFactory" />
+	</bean>
+
+	<!-- mapper scan -->
+	<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+		<property name="basePackage" value="com.kt.giga.home" />
+	</bean>
+
+	<!-- default executor, scheduler -->
+	<task:annotation-driven executor="executor" scheduler="scheduler" />
+	<task:executor id="executor" pool-size="100-1000" queue-capacity="1000" rejection-policy="ABORT"/>
+	<task:scheduler	id="scheduler" pool-size="5"/>
+
+	<!-- token update executor -->
+	<task:executor id="tokenUpdateExecutor" pool-size="10-50" queue-capacity="1000" rejection-policy="CALLER_RUNS"/>
+
+	<!-- resttemplate -->
+	<bean id="restTemplate" class="org.springframework.web.client.RestTemplate"/>
+
+	<!-- resources read -->
+	<mvc:resources location="/resources/" mapping="/resources/**"/>
+
+	<!-- properties -->
+	<encryption:encryptable-property-placeholder encryptor="stringEnc" location="file:${hiot.properties.path}/app.${hiot.run.env:svc}.properties"/>
+	<encryption:string-encryptor id="stringEnc" algorithm="PBEWithMD5AndDES" password="hiot-openapi!@#$" />
+
+	<!-- ViewResolver -->
+	<bean id="viewNameTranslator" class="org.springframework.web.servlet.view.DefaultRequestToViewNameTranslator" />
+
+	<!-- transaction 관리 -->
+	<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource"/>
+    </bean>
+    <tx:annotation-driven transaction-manager="transactionManager" proxy-target-class="true"/>
+
+	<bean class="org.springframework.web.servlet.view.ContentNegotiatingViewResolver">
+        <property name="viewResolvers">
+            <list>
+                <bean class="org.springframework.web.servlet.view.BeanNameViewResolver" />
+                <bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+                    <property name="prefix" value="/WEB-INF/views/" />
+                </bean>
+            </list>
+        </property>
+    </bean>
+
+</beans>

@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kt.giga.home.cms.monitor.dao.MonitorDao">
+
+ 
+ 	<sql id= "notice">
+  	(
+ 		SELECT 
+ 				pk_monitoring AS "pk"
+ 			,	fd_admin_name AS "adminName"
+ 			,	fd_interval AS "interval"
+ 			,	fd_unlimited AS "unlimitedYN"
+ 			,	fd_writer_id as "writerId"
+ 			,	n.fd_regdate AS "regDate" 	
+ 			,	n.fd_update_date AS "updateDate"
+ 			,	fd_modifier_id AS "modifierId" 
+ 			FROM tb_monitoring AS n 
+			LEFT OUTER JOIN (SELECT pk_admin_id, fd_admin_name FROM tb_admin) AS a 
+			ON n.fd_writer_id = a.pk_admin_id		
+ 	 	) AS notice 
+ 	</sql>
+ 	
+	<sql id="where">
+	
+ 		<trim prefix="WHERE" prefixOverrides="AND || OR ">
+			<if test="cpCode != null and cpCode != ''">
+				"cpCode" = #{cpCode}
+			</if>
+			<if test="searchColumn != null and searchColumn != null and searchString != null and searchString != ''">
+				AND "${searchColumn}" LIKE '%' || #{searchString} || '%'
+			</if>
+		</trim>	
+		 
+	</sql>
+	
+	<select id="getCount" parameterType="Map" resultType="int">
+	
+ 		SELECT COUNT(pk) cnt 
+		FROM <include refid="notice"/> 
+		<include refid="where"/>
+
+	</select>
+	
+	<select id="get" parameterType="Map" resultType="Map">
+	
+ 		SELECT 
+			"pk"
+		,	"interval"
+		,	"unlimitedYN"
+		,	"verMemo"
+		,	"writerId"
+		,	"regDate"
+		,	"updateDate"
+		,	"modifierId"
+		FROM <include refid="notice"/>  
+		WHERE "pk" = #{pk} 
+		<if test="cpCode != null and cpCode != ''"> AND "cpCode" = #{cpCode}</if>
+	
+	</select>
+
+	<select id="getList" parameterType="Map" resultType="Map">
+	
+ 		SELECT * 
+		FROM (
+			SELECT * FROM <include refid="notice"/>
+			<include refid="where"/> 
+			ORDER BY "pk" DESC
+		) AS notice 
+		LIMIT ${pageSize} OFFSET (#{page} - 1) * #{pageSize}
+		 
+	</select>
+
+</mapper>

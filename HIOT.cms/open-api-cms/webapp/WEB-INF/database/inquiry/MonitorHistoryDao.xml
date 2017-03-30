@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kt.giga.home.cms.inquiry.dao.MonitorHistoryDao">
+
+    <sql id= "monitoringHistory">
+  		(
+			SELECT 
+				A.* 
+				, B.spot_dev_id 
+				, B.dev_nm 
+				, D.pk_code 
+				, D.fd_depth_1 
+				, D.fd_depth_2 
+				, D.fd_depth_3 
+				, E.fd_memo 	
+		
+			FROM 
+				tb_appLog AS A 
+				
+				left join (
+					select	
+						Ba.mbr_seq, Ba.unit_svc_cd, Bb.*
+					from 	
+						svc_tgt_bas as Ba
+						, spot_dev_bas Bb
+					where 	
+						Ba.svc_tgt_seq=Bb.svc_tgt_seq  and Ba.del_yn = 'N'
+				) AS B on ( B.mbr_seq||''= A.mbr_seq and B.unit_svc_cd=A.unit_svc_cd and B.dev_uu_id=A.dev_uuid) 
+			
+				left join tb_applog_code AS D on (A.menu_code=D.pk_code)
+				
+				left join tb_code AS E on (SPLIT_PART(A.contents, '|', 1)=E.pk_code) 
+				<!-- where A.mbr_seq is not null -->
+				<!-- left join tb_code AS E on (A.contents=E.pk_code) 
+				where A.mbr_seq is not null --> 
+				where A.menu_code IN ('CJ11','CL02','CL03','CL14','CL15','CL21','CL22','CL23','CL24','CL25','CL26','CL61','CL71','CL81','CL91')
+        ) AS applog
+    </sql>
+ 
+    <sql id="where">
+    
+        <trim prefix="WHERE" prefixOverrides="AND || OR ">
+            <if test="searchStartDate != null and searchStartDate != '' and searchEndDate != null and searchEndDate != ''"> 
+		        AND cret_dt BETWEEN #{searchStartDate} AND #{searchEndDate}
+		    </if>                   
+		    
+            <if test="searchColumn != null and searchColumn != '' and searchString != null and searchString != ''">
+                AND ${searchColumn} LIKE '%' || #{searchString} || '%'
+            </if>
+            <if test="pk_code != null and pk_code != ''">
+                AND pk_code LIKE #{pk_code} || '%'
+            </if>
+        </trim> 
+         
+    </sql>
+    
+    <select id="getCount" parameterType="Map" resultType="int">
+    
+        SELECT COUNT(*) cnt 
+        FROM <include refid="monitoringHistory"/> 
+        <include refid="where"/>
+
+    </select>
+    
+    <select id="get" parameterType="Map" resultType="Map">
+    </select>
+
+    <select id="getList" parameterType="Map" resultType="Map">
+    
+        SELECT applog.* 
+        FROM <include refid="monitoringHistory"/> 
+        <include refid="where"/>
+        
+        ORDER BY applog.pk_applog DESC 
+        <!-- LIMIT ${pageSize} OFFSET (#{page} - 1) * #{pageSize} -->
+        <if test="page != null and page != '' and pageSize != null and pageSize != ''">LIMIT ${pageSize} OFFSET (#{page} - 1) * #{pageSize}</if>
+		<if test="page == null or page == '' or pageSize == null or pageSize == ''">LIMIT ${limitCount}</if>	
+         
+    </select>
+    
+    <!-- 리트스에서 메뉴코드 종류 조회  -->
+    <select id="getMenuCodeList" resultType="Map">
+        SELECT pk_code, fd_depth_3 FROM tb_applog_code 
+        WHERE pk_code IN ('CJ11','CL02','CL03','CL14','CL15','CL21','CL22','CL23','CL24','CL25','CL26','CL61','CL71','CL81','CL91')
+        order BY pk_code ASC
+    </select>
+    
+    <select id="getSelectMenuCodeList" parameterType="Map" resultType="Map">
+    
+    	SELECT  
+    		${selectColumn}
+    	<if test="selectColumn == 'fd_type'">
+    	,	SUBSTRING(pk_code FROM 1 FOR 1) AS "pk_code_str"
+    	</if>
+    	<if test="selectColumn == 'fd_depth_1'">
+    	,	SUBSTRING(pk_code FROM 2 FOR 1) AS "pk_code_str"
+    	</if>
+    	<if test="selectColumn == 'fd_depth_2'">
+    	,	SUBSTRING(pk_code FROM 3 FOR 1) AS "pk_code_str"
+    	</if>
+    	<if test="selectColumn == 'fd_depth_3'">
+    	,	SUBSTRING(pk_code FROM 4 FOR 1) AS "pk_code_str"
+    	</if>
+    	
+       	FROM tb_applog_code 
+		
+		WHERE pk_code IN ('CJ11','CL02','CL03','CL14','CL15','CL21','CL22','CL23','CL24','CL25','CL26','CL61','CL71','CL81','CL91')
+		<if test="pk_code != null and pk_code != ''">
+		AND pk_code LIKE #{pk_code} || '%'
+		</if>
+		
+		GROUP BY ${selectColumn}
+		<if test="selectColumn == 'fd_type'">
+    	,	SUBSTRING(pk_code FROM 1 FOR 1)
+    	</if>
+    	<if test="selectColumn == 'fd_depth_1'">
+    	,	SUBSTRING(pk_code FROM 2 FOR 1)
+    	</if>
+    	<if test="selectColumn == 'fd_depth_2'">
+    	,	SUBSTRING(pk_code FROM 3 FOR 1)
+    	</if>
+    	<if test="selectColumn == 'fd_depth_3'">
+    	,	SUBSTRING(pk_code FROM 4 FOR 1)
+    	</if>
+		
+		ORDER BY ${selectColumn}
+		<if test="selectColumn == 'fd_type'">
+    	,	SUBSTRING(pk_code FROM 1 FOR 1)
+    	</if>
+    	<if test="selectColumn == 'fd_depth_1'">
+    	,	SUBSTRING(pk_code FROM 2 FOR 1)
+    	</if>
+    	<if test="selectColumn == 'fd_depth_2'">
+    	,	SUBSTRING(pk_code FROM 3 FOR 1)
+    	</if>
+    	<if test="selectColumn == 'fd_depth_3'">
+    	,	SUBSTRING(pk_code FROM 4 FOR 1)
+    	</if>
+    	 
+    </select>
+</mapper>

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kt.giga.home.openapi.cms.dao.AppLogDao">
+
+	<insert id="set" parameterType="Map">
+	
+		INSERT INTO tb_applog(
+			conn_terml_id
+		,	tel_no
+		,	appl_ver
+		,	unit_svc_cd
+		,	menu_code
+		,	contents
+		,	log_time
+		,	auth_token
+		,	mbr_seq
+		,	mbr_id
+		,	dev_uuid
+		) 
+		VALUES(
+			#{deviceId}
+		,	#{decodeTelNo}
+		,	#{appVer}
+		,	#{svcCode}
+		,	#{menuCode}
+		,	#{contents}
+		,	#{logTime}
+		,	#{auth_token}
+		,	#{mbr_seq}
+		,	#{mbr_id}
+		,	#{dev_uuid}
+		)
+	
+	</insert>
+
+</mapper>

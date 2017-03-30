@@ -1,0 +1,13 @@
+target
+.settings
+.classpath
+.project
+.springBeans
+.externalToolBuilders
+.DS_Store
+build.xml
+.idea/
+exportToHTML/
+*.iml
+src/main/test-resources/
+src/main/test/

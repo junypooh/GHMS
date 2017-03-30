@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kt.giga.home.cms.common.dao.CodeDao">
+
+	<select id="getServiceName" parameterType="String" resultType="String">
+	
+		SELECT fd_memo FROM tb_code 
+		WHERE fd_up_code = '1200' AND fd_name = #{value} 
+	
+	</select>
+
+	<select id="get" parameterType="String" resultType="Code">
+	
+		SELECT 
+			pk_code AS "code"
+		,	fd_up_code AS "upCode"
+		,	fd_name AS "name"
+		,	fd_use_yn AS "useYN"
+		,	fd_memo AS "memo"	
+		FROM tb_code 
+		WHERE pk_code = #{value} AND fd_use_yn = 'Y'
+		
+	</select>
+
+	<select id="getList" parameterType="String" resultType="Code">
+	
+		SELECT
+			pk_code AS "code"
+		,	fd_up_code AS "upCode"
+		,	fd_name AS "name"
+		,	fd_use_yn AS "useYN"
+		,	fd_memo AS "memo"			 
+		FROM tb_code 
+		WHERE fd_up_code = #{value} AND fd_use_yn = 'Y'
+		
+	</select>
+	
+	<select id="getUrl" parameterType="String" resultType="String">
+	
+		SELECT fd_name FROM tb_code 
+		WHERE fd_up_code = '1400' AND pk_code = #{pkCode} 
+	
+	</select>	
+
+</mapper>

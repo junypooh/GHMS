@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kt.giga.home.openapi.cms.dao.NoticePmDao">
+
+	<select id="getNoticePmList" parameterType="string" resultType="NoticePm">
+		SELECT 
+			*
+		FROM 
+			tb_notice_pm
+		WHERE 
+			fk_cp_code	= #{cpCode}
+			AND fd_open_yn	= 'Y'
+			<if test="now !='' and now != null">	AND #{now} BETWEEN fd_start_time AND fd_end_time	</if>				
+		ORDER BY 
+			pk_notice_pm DESC	
+			<if test="limitCnt !='' and limitCnt != null and limitCnt !=0">	Limit ${limitCnt}	</if>
+			<if test="startSeq !='' and startSeq != null">					OFFSET ${startSeq}	</if>		
+	</select>
+
+	<select id="getNoticePmAllCnt" parameterType="string" resultType="int">
+		SELECT 
+			COUNT(*)
+		FROM 
+			tb_notice_pm
+		WHERE 
+			fk_cp_code	= #{cpCode}
+			AND fd_open_yn	= 'Y'
+			<if test="now !='' and now != null">	AND #{now} BETWEEN fd_start_time AND fd_end_time	</if>				
+	</select>
+
+	<select id="getNoticePmNow" parameterType="string" resultType="NoticePm">
+		SELECT 
+			*
+		FROM 
+			tb_notice_pm
+		WHERE 
+			fk_cp_code	= #{cpCode}
+			AND fd_open_yn	= 'Y'
+			AND #{now} BETWEEN fd_start_time AND fd_end_time
+		Limit 1
+	</select>
+
+</mapper>
+
+

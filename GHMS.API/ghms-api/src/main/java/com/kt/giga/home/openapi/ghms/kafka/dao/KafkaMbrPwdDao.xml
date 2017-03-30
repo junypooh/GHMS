@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kt.giga.home.openapi.ghms.kafka.dao.KafkaMbrPwdDao">
+	<select id="selectMbrPwdTxnCnt" parameterType="map" resultType="int">
+		SELECT count(*)
+		  FROM mbr_pwd_txn
+		 WHERE svc_tgt_seq = #{svcTgtSeq}
+		   AND spot_dev_seq = #{spotDevSeq}
+		   AND trgt_mbr_seq = #{userSeq}
+	</select>
+	<update id="updateMbrPwdTxn" parameterType="map">
+		UPDATE mbr_pwd_txn
+		   SET pwd=#{userPw}
+		 WHERE svc_tgt_seq = #{svcTgtSeq}
+		   AND spot_dev_seq = #{spotDevSeq}
+		   <if test="userSeq != null">
+		   AND trgt_mbr_seq = #{userSeq}
+		   </if>
+	</update>
+	<delete id="deleteMbrPwdTxn" parameterType="map">
+		DELETE FROM mbr_pwd_txn
+		 WHERE svc_tgt_seq = #{svcTgtSeq}
+		   AND spot_dev_seq = #{spotDevSeq}
+		   <if test="userSeq != null">
+		   AND trgt_mbr_seq = #{userSeq}
+		   </if>
+	</delete>	
+	<insert id="insertMbrPwdTxn" parameterType="map">
+		INSERT INTO mbr_pwd_txn(
+		            trgt_mbr_seq, spot_dev_seq, pwd, svc_tgt_seq, user_cd_seq, trgt_nm)
+		    VALUES (#{userSeq}, #{spotDevSeq}, #{userPw}, #{svcTgtSeq}, #{userSeq}, #{userNm})
+	</insert>
+
+	<select id="selectMbrPwdTxnNm" parameterType="map" resultType="string">
+		SELECT trgt_nm
+		  FROM mbr_pwd_txn
+		 WHERE svc_tgt_seq = #{svcTgtSeq}
+		   AND spot_dev_seq = #{spotDevSeq}
+		   AND trgt_mbr_seq = #{userSeq}
+	</select>	
+</mapper>
+
+

@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration
+	PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-config.dtd">
+	
+<configuration>
+    
+	<settings>
+		<setting name="defaultExecutorType" value="SIMPLE" />
+	</settings>
+	
+	<typeAliases>
+		<!-- <typeAlias alias="User" 			type="com.kt.giga.home.openapi.domain.User"/> -->
+        <typeAlias alias="EnrollmentStatus" type="com.kt.giga.home.openapi.hcam.domain.EnrollmentStatus"/>
+        <typeAlias alias="Firmware"             type="com.kt.giga.home.openapi.hcam.domain.Firmware"/>
+		<typeAlias alias="AppUser" 				type="com.kt.giga.home.openapi.hcam.user.domain.AppUser"/>
+		<typeAlias alias="SpotDevBas" 			type="com.kt.giga.home.openapi.domain.SpotDevBas"/>
+		<typeAlias alias="SvcTgtBas" 			type="com.kt.giga.home.openapi.domain.SvcTgtBas"/>
+		<typeAlias alias="RtimeSttusDataUpdTxn" type="com.kt.giga.home.openapi.domain.RtimeSttusDataUpdTxn"/>
+		<typeAlias alias="CameraConfig" 		type="com.kt.giga.home.openapi.domain.CameraConfig"/>
+		<typeAlias alias="SvcStpltBas" 			type="com.kt.giga.home.openapi.domain.SvcStpltBas"/>
+		<typeAlias alias="HealthUserAuth" 		type="com.kt.giga.home.openapi.health.user.domain.HealthUserAuth"/>
+		<typeAlias alias="HealthUser" 		    type="com.kt.giga.home.openapi.health.user.domain.HealthUser"/>
+		<typeAlias alias="HomeProvision" 		type="com.kt.giga.home.openapi.domain.HomeProvision"/>
+		<typeAlias alias="SpotDevExpnsnBas" 	type="com.kt.giga.home.openapi.domain.SpotDevExpnsnBas"/>
+		<typeAlias alias="LoginPushInfo" 	    type="com.kt.giga.home.openapi.hcam.user.domain.LoginPushInfo"/>
+        <typeAlias alias="LoginHistory"         type="com.kt.giga.home.openapi.hcam.domain.LoginHistory"/>
+
+		<!-- CMS -->
+		<typeAlias alias="Code" 				type="com.kt.giga.home.openapi.cms.domain.Code"/>
+		<typeAlias alias="Notice"	 			type="com.kt.giga.home.openapi.cms.domain.Notice"/>
+		<typeAlias alias="NoticePm"	 			type="com.kt.giga.home.openapi.cms.domain.NoticePm"/>
+		<typeAlias alias="NoticePopup"	 		type="com.kt.giga.home.openapi.cms.domain.NoticePopup"/>
+		<typeAlias alias="Faq"	 				type="com.kt.giga.home.openapi.cms.domain.Faq"/>
+		<typeAlias alias="Terms" 				type="com.kt.giga.home.openapi.cms.domain.Terms"/>
+		<typeAlias alias="TermsAgree" 			type="com.kt.giga.home.openapi.cms.domain.TermsAgree"/>
+		<typeAlias alias="ParentsAgree"			type="com.kt.giga.home.openapi.cms.domain.ParentsAgree"/>
+		<typeAlias alias="VersionApp"	 		type="com.kt.giga.home.openapi.cms.domain.VersionApp"/>
+		<typeAlias alias="VersionFrmwr"	 		type="com.kt.giga.home.openapi.cms.domain.VersionFrmwr"/>
+		<typeAlias alias="GuideCoach"	 		type="com.kt.giga.home.openapi.cms.domain.GuideCoach"/>
+		<typeAlias alias="GuideWelcome"	 		type="com.kt.giga.home.openapi.cms.domain.GuideWelcome"/>
+		<typeAlias alias="GuideCamera"	 		type="com.kt.giga.home.openapi.cms.domain.GuideCamera"/>
+		<typeAlias alias="HomesvcProps"	 		type="com.kt.giga.home.openapi.cms.domain.HomesvcProps"/>
+		<typeAlias alias="FileInfo"	 			type="com.kt.giga.home.openapi.cms.domain.FileInfo"/>
+
+		<!-- HealthCare -->
+		<typeAlias alias="OtvPairingBas"	 	type="com.kt.giga.home.openapi.health.paring.domain.OtvPairingBas"/>
+		<typeAlias alias="MsgTrmTxn"	 		type="com.kt.giga.home.openapi.health.paring.domain.MsgTrmTxn"/>
+		
+		<!-- HomeCam -->
+		<typeAlias alias="ControlTransaction" 	type="com.kt.giga.home.openapi.hcam.domain.ControlTransaction"/>
+		<typeAlias alias="User" 				type="com.kt.giga.home.openapi.hcam.domain.User"/>
+		<typeAlias alias="VoiceSession"			type="com.kt.giga.home.openapi.hcam.domain.VoiceSession"/>
+
+		<!-- kpns -->
+		<typeAlias alias="Event"				type="com.kt.giga.home.openapi.kpns.domain.Event"/>			
+		
+		<!-- DeviceMaster -->
+		<typeAlias alias="SpotDev" 				type="com.kt.giga.home.openapi.vo.spotdev.SpotDev"/>
+		<typeAlias alias="SpotDevDtl" 			type="com.kt.giga.home.openapi.vo.spotdev.SpotDevDtl"/>
+		<typeAlias alias="GenlSetupData" 		type="com.kt.giga.home.openapi.vo.row.GenlSetupData"/>
+	</typeAliases>	
+
+</configuration>  

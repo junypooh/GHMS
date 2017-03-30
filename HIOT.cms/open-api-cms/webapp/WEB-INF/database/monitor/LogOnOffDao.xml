@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kt.giga.home.cms.monitor.dao.LogOnOffDao">
+
+	<select id="getCount" parameterType="Map" resultType="int">
+	
+		SELECT 
+			COUNT(*) AS cnt  
+		FROM (
+			SELECT 
+				sdb.spot_dev_seq 
+			,	sdb.svc_tgt_seq 
+			FROM (
+				SELECT	
+					svc_tgt_seq 		
+				,	mbr_seq 
+				FROM	svc_tgt_bas 
+				WHERE	unit_svc_cd = '001' 
+			) AS stb 
+			INNER JOIN (
+				SELECT 
+					spot_dev_seq
+				,	svc_tgt_seq
+				,	spot_dev_id
+				,	dev_uu_id
+				,	del_yn 
+				FROM spot_dev_bas
+			) AS sdb 
+			ON	stb.svc_tgt_seq = sdb.svc_tgt_seq
+			LEFT OUTER JOIN (
+				SELECT 
+					mbr_seq
+				,	mbr_id 
+				FROM 	mbr_bas 
+			) AS mb 
+			ON 	stb.mbr_seq = mb.mbr_seq 
+			LEFT OUTER JOIN (
+				SELECT
+					mbr_seq
+				,	tel_no
+				FROM 	svc_tgt_conn_bas 
+				WHERE 	unit_svc_cd = '001' 
+			) AS stcb 	
+			ON	stb.mbr_seq = stcb.mbr_seq 	
+			<where>
+				sdb.del_yn = 'N' 
+				<if test="searchString != null and searchString != ''">
+					AND ${searchColumn} LIKE '%' || #{searchString} || '%'
+				</if>
+			</where>				
+			GROUP BY sdb.spot_dev_seq, sdb.svc_tgt_seq 
+		) AS sdb1	
+	
+	</select>
+
+	<select id="getList" parameterType="Map" resultType="Map">
+
+		SELECT 
+			sdb.spot_dev_seq AS "spotDevSeq" 					-- 현장장치 일련번호
+		,	sdb.svc_tgt_seq AS "svcTgtSeq"						-- 서비스대상 일련번호 
+		,	sdb.spot_dev_id AS "spotDevId"						-- 현장장치 아이디
+		,	sdb.dev_uu_id AS "devUUID"							-- 현장장치 UUID
+		,	sdb.dev_nm AS "devNm"								-- 현장장치 닉네임
+		,	mb.mbr_id AS "mbrId"								-- 회원 아이디
+		,	stcb.tel_no AS "telNo" 								-- 전화번호
+		,	stcb.tel_cnt AS "telCnt" 							-- 전화번호 카운트
+		,	COALESCE(sdgst.setup_val, '0') AS "logMode"			-- 로그전송 On / Off
+		,	sdb.cret_dt AS "cretDt" 							-- 현장장치 생성일시
+		FROM (
+			SELECT 
+				sdb2.spot_dev_seq 
+			,	sdb2.svc_tgt_seq
+			,	sdb2.spot_dev_id
+			,	sdb2.dev_uu_id
+			,	sdb2.dev_nm	
+			,	sdb2.cret_dt
+			FROM (
+				SELECT 
+					sdb.spot_dev_seq 
+				,	sdb.svc_tgt_seq 
+				FROM (
+					SELECT	
+						svc_tgt_seq 		
+					,	mbr_seq 
+					FROM	svc_tgt_bas 
+					WHERE	unit_svc_cd = '001' 
+				) AS stb 
+				INNER JOIN (
+					SELECT 
+						spot_dev_seq
+					,	svc_tgt_seq
+					,	spot_dev_id
+					,	dev_uu_id
+					,	del_yn 
+					FROM spot_dev_bas
+				) AS sdb 
+				ON	stb.svc_tgt_seq = sdb.svc_tgt_seq
+				LEFT OUTER JOIN (
+					SELECT 
+						mbr_seq
+					,	mbr_id 
+					FROM 	mbr_bas 
+				) AS mb 
+				ON 	stb.mbr_seq = mb.mbr_seq 
+				LEFT OUTER JOIN (
+					SELECT
+						mbr_seq
+					,	tel_no
+					FROM 	svc_tgt_conn_bas 
+					WHERE 	unit_svc_cd = '001' 
+				) AS stcb 	
+				ON	stb.mbr_seq = stcb.mbr_seq 	
+				<where>
+					sdb.del_yn = 'N' 
+					<if test="searchString != null and searchString != ''">
+						AND ${searchColumn} LIKE '%' || #{searchString} || '%'
+					</if>
+				</where>				
+				GROUP BY sdb.spot_dev_seq, sdb.svc_tgt_seq 
+			) AS sdb1 
+			INNER JOIN spot_dev_bas AS sdb2 
+			ON	sdb1.spot_dev_seq = sdb2.spot_dev_seq 
+			AND	sdb1.svc_tgt_seq = sdb2.svc_tgt_seq 
+		) AS sdb 
+		LEFT OUTER JOIN (
+			SELECT 
+				svc_tgt_seq
+			,	mbr_seq
+			,	unit_svc_cd
+			FROM 	svc_tgt_bas
+		) AS stb 
+		ON 	sdb.svc_tgt_seq = stb.svc_tgt_seq 
+		LEFT OUTER JOIN (
+			SELECT 
+				mbr_seq
+			,	mbr_id 
+			FROM 	mbr_bas 
+		) AS mb 
+		ON 	stb.mbr_seq = mb.mbr_seq 
+		LEFT OUTER JOIN (
+			SELECT 
+				mbr_seq
+			,	MAX(tel_no) AS tel_no 
+			,	COUNT(tel_no) AS tel_cnt
+			FROM svc_tgt_conn_bas 
+			WHERE unit_svc_cd = '001' 
+			GROUP BY mbr_seq
+		) AS stcb 
+		ON	mb.mbr_seq = stcb.mbr_seq 
+		LEFT OUTER JOIN (
+			SELECT 
+				svc_tgt_seq
+			,	spot_dev_seq
+			,	setup_val
+			FROM 	spot_dev_genl_setup_txn
+			WHERE 	del_yn = 'N'
+			AND	snsn_tag_cd = '80000042'
+		) AS sdgst 
+		ON	sdb.svc_tgt_seq = sdgst.svc_tgt_seq
+		AND	sdb.spot_dev_seq = sdgst.spot_dev_seq 	
+		ORDER BY sdb.cret_dt DESC 
+		LIMIT ${pageSize} OFFSET (#{page} - 1) * #{pageSize}
+		
+	</select>
+	
+</mapper>

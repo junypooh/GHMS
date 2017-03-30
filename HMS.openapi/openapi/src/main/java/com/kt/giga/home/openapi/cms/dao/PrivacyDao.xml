@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kt.giga.home.openapi.cms.dao.PrivacyDao">
+
+	<select id="getLastSeq" parameterType="String" resultType="int">
+	
+		SELECT pk_privacy FROM tb_privacy 
+		WHERE fd_mandatory_yn = 'Y' AND fk_cp_code = #{value}
+		ORDER BY pk_privacy DESC
+		LIMIT 1
+	</select>
+
+</mapper>
+
+

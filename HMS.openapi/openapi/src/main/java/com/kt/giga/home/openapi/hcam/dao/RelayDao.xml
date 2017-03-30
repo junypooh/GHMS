@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kt.giga.home.openapi.hcam.dao.RelayDao">
+
+	<!-- 릴레이 디바이스 아이디 생성 -->
+	<select id="createRelayDeviceId" resultType="int">
+		SELECT NEXTVAL('SEQ_RELAY_HOMECAM_RD_ID')
+	</select>
+
+	<!-- 현장장치 키 조회 -->
+	<select id="getSpotDevKey" resultType="hashMap">
+		SELECT
+			SVC_TGT_SEQ::bigint		AS "svcTgtSeq",
+			SPOT_DEV_SEQ::bigint	AS "spotDevSeq"
+		FROM
+			SPOT_DEV_BAS
+		WHERE
+			DEV_UU_ID = #{devUUID}
+	</select>
+
+	<!--  릴레이 디바이스 아이디 조회 -->
+	<select id="getRelayDeviceIdPw" resultType="hashMap">
+		SELECT
+			RD_ID			AS "relayDeviceId",
+			RD_PW			AS "relayDevicePw"
+		FROM
+			RELAY_HOMECAM
+		WHERE
+			DEV_UU_ID = #{devUUID}
+	</select>
+	
+	<!-- 릴레이 디바이스 아이디 삽입 -->
+	<insert id="insertRelayDeviceIdPw">
+		INSERT INTO RELAY_HOMECAM (
+			DEV_UU_ID,
+			RD_ID,
+			RD_PW
+		)
+		VALUES (
+			#{devUUID},
+			#{relayDeviceId},
+			#{relayDevicePw}
+		)
+	</insert>
+	
+	<!-- 릴레이 디바이스 패스워드 변경 -->
+	<update id="updateRelayDevicePw">
+		UPDATE
+			RELAY_HOMECAM
+		SET
+			RD_PW			= #{relayDevicePw}
+		WHERE
+			DEV_UU_ID		= #{devUUID}
+	</update>
+
+</mapper>

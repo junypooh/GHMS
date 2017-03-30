@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kt.giga.home.openapi.ghms.ktInfra.dao.KPNSDao">
+	
+	<!-- PNS 이력 저장 -->
+	<insert id="insertMsgTrmForwardTxn">
+		INSERT INTO msg_trm_forward_txn (
+			mbr_seq,
+		    svc_tgt_seq,
+		    spot_dev_seq,
+		    pns_reg_id,
+		    tel_no,
+		    dstr_cd,
+		    svc_theme_cd,
+		    unit_svc_cd,
+		    setup_cd,
+		    msg_seq,
+		    msg_id,
+		    up_msg_id,
+		    msg_trm_sbst,
+		    msg_trm_fail_txn,
+		    msg_trm_forward_yn,
+		    msg_rcv_yn,
+		    msg_trm_dt,
+		    msg_retry_seq
+		) VALUES (
+			#{mbr_seq},
+			#{svc_tgt_seq},
+			#{spot_dev_seq},
+			#{pns_reg_id},
+			#{tel_no},
+			#{dstr_cd},
+			#{svc_theme_cd},
+			#{unit_svc_cd},
+			#{setup_cd},
+			#{msg_seq},
+			#{msg_id},
+			#{up_msg_id},
+			#{msg_trm_sbst},
+			#{msg_trm_fail_txn},
+			#{msg_trm_forward_yn},
+			'N',
+			now(),
+			#{msg_retry_seq}
+		)
+	</insert>
+	
+	<!-- 사용자 정보 조회 -->
+	<select id="selectMbrInfoByPnsId" resultType="Map">
+		SELECT * FROM svc_tgt_conn_bas
+		WHERE PNS_REG_ID = #{pnsRegId}
+		AND TEL_NO IS NOT NULL
+		AND DSTR_CD = '001'
+		AND SVC_THEME_CD = 'HIT'
+		AND UNIT_SVC_CD = '003'
+	</select>
+	
+	<!-- PNS 이력 수정 -->
+	<update id="updateMsgTrmForwardTxn">
+		UPDATE msg_trm_forward_txn 
+		   SET msg_rcv_yn = #{msg_rcv_yn},
+		   	   msg_rcv_dt = to_timestamp(#{msg_rcv_dt}, 'YYYYMMDDHH24MISS'),
+		   	   msg_rcv_fail_txn = #{msg_rcv_fail_txn}
+		 WHERE msg_id = #{msg_id}
+	</update>
+	
+	<!-- PNS 이력 조회 -->
+	<select id="selectMsgTrmForwardTxnByMsgId" resultType="com.kt.giga.home.openapi.ghms.ktInfra.domain.key.KPNSEvent">
+		SELECT mbr_seq,
+			   svc_tgt_seq,
+			   spot_dev_seq,
+			   pns_reg_id,
+			   tel_no,
+			   dstr_cd,
+			   svc_theme_cd,
+			   unit_svc_cd,
+			   setup_cd,
+			   msg_id,
+			   up_msg_id,
+			   msg_trm_sbst,
+			   msg_trm_fail_txn,
+			   msg_trm_forward_yn,
+			   msg_rcv_yn,
+			   msg_trm_dt,
+			   msg_retry_seq
+		  FROM msg_trm_forward_txn 
+		 WHERE msg_id = #{msg_id}
+	</select>
+	
+	
+</mapper>
+
+

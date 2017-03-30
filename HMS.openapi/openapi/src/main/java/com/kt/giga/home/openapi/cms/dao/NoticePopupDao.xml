@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kt.giga.home.openapi.cms.dao.NoticePopupDao">
+
+	<select id="getNoticePopupList" parameterType="string" resultType="NoticePopup">
+	
+		SELECT 
+			*
+		FROM 
+			tb_notice_popup
+		WHERE 
+			fk_cp_code	= #{cpCode}
+			AND fd_open_yn	= 'Y'
+		ORDER BY 
+			fd_preorder_yn ASC
+			, pk_notice_popup DESC	
+			<if test="limitCnt !='' and limitCnt != null and limitCnt !=0">	Limit ${limitCnt}	</if>
+			<if test="startSeq !='' and startSeq != null">					OFFSET ${startSeq}	</if>		
+			
+	</select>
+
+	<select id="getNoticePopupAllCnt" parameterType="string" resultType="int">
+	
+		SELECT 
+			COUNT(*)
+		FROM 
+			tb_notice_popup
+		WHERE 
+			fk_cp_code	= #{cpCode}
+			AND fd_open_yn	= 'Y'
+			
+	</select>
+
+	<select id="getNoticePopupLast" parameterType="Map" resultType="NoticePopup">
+	
+		<![CDATA[
+		SELECT *
+		FROM ( 
+			SELECT 
+				pk_notice_popup
+			,	fk_cp_code
+			,	fd_title
+			,	fd_contents
+			,	fd_open_yn
+			,	fd_start_time 	
+			,	(CASE WHEN fd_end_time IS NULL THEN #{nowDateTime} ELSE fd_end_time END) AS fd_end_time 
+			,	fd_popup_type
+			,	fd_nomore_yn
+			,	fd_writer_id
+			,	fd_writer_ip
+			,	fd_regdate
+			,	fd_modifier_id
+			,	fd_modifier_ip
+			,	fd_update_date
+			,	fd_preorder_yn
+			FROM (
+				SELECT *
+				FROM 
+					tb_notice_popup 
+				WHERE   
+					fk_cp_code = #{cpCode}  
+				AND	fd_open_yn = 'Y' 
+				AND	fd_start_time IS NOT NULL 
+			) AS notice_popup 
+		) AS notice_popup 
+		WHERE 
+			fd_start_time <= #{nowDateTime} 
+		AND	fd_end_time >= #{nowDateTime}
+		ORDER BY 
+			(CASE WHEN fd_preorder_yn = 'Y' THEN pk_notice_popup + 100000000 ELSE pk_notice_popup END) DESC 
+		Limit 1	
+		]]>
+	</select>
+	
+	<select id="getNoticePopupViewCnt" parameterType="Map" resultType="int">
+	
+		<![CDATA[
+		SELECT 
+			COUNT(*) AS cnt  
+		FROM ( 
+			SELECT 
+				pk_notice_popup
+			,	fd_start_time 	
+			,	(CASE WHEN fd_end_time IS NULL THEN #{nowDateTime} ELSE fd_end_time END) AS fd_end_time 
+			FROM (
+				SELECT 
+					pk_notice_popup
+				,	fd_start_time 
+				,	fd_end_time 
+				FROM 
+					tb_notice_popup 
+				WHERE   
+					fk_cp_code = #{cpCode} 
+				AND	fd_open_yn = 'Y' 
+				AND	fd_start_time IS NOT NULL 
+			) AS notice_popup 
+		) AS notice_popup 
+		WHERE 
+			fd_start_time  <= #{nowDateTime} 
+		AND	fd_end_time >= #{nowDateTime}	
+		]]>
+	
+	</select>
+
+</mapper>
+
+

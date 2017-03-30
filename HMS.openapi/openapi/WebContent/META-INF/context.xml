@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Context reloadable="true" swallowOutput="true" crossContext="true">
+
+  <Valve className="org.apache.catalina.valves.AccessLogValve"
+    directory="logs/${app.name}"  prefix="${app.name}-access." suffix=".log"
+    pattern="common" resolveHosts="false"/>
+	 
+</Context>

@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://java.sun.com/xml/ns/javaee" xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd" id="WebApp_ID" version="3.0">
+  <display-name>hiotcms</display-name>
+  <context-param>
+    <param-name>contextConfigLocation</param-name>
+    <param-value>/WEB-INF/config/root-context.xml</param-value>
+  </context-param>
+  <context-param>
+    <param-name>authExpire</param-name>
+    <param-value>60</param-value>
+  </context-param>
+  <context-param>
+    <param-name>defaultHtmlEscape</param-name>
+    <param-value>true</param-value>
+  </context-param>
+  <context-param>
+    <param-name>rootPathType</param-name>
+    <param-value>virtual</param-value>
+  </context-param>
+  <context-param>
+    <param-name>uploadPath</param-name>
+    <param-value>/data/cms</param-value>
+  </context-param>
+  <context-param>
+    <param-name>faqPath</param-name>
+    <param-value>/upload/faq</param-value>
+  </context-param>
+  <context-param>
+    <param-name>coachPath</param-name>
+    <param-value>/upload/coach</param-value>
+  </context-param>
+  <context-param>
+    <param-name>welcomePath</param-name>
+    <param-value>/upload/welcome</param-value>
+  </context-param>
+  <context-param>
+    <param-name>cameraPath</param-name>
+    <param-value>/upload/camera</param-value>
+  </context-param>
+  <context-param>
+    <param-name>appPath</param-name>
+    <param-value>/upload/app</param-value>
+  </context-param>
+  <context-param>
+    <param-name>excelCount</param-name>
+    <param-value>10000</param-value>
+  </context-param>
+  
+  <filter>
+    <filter-name>encodingFilter</filter-name>
+    <filter-class>
+            org.springframework.web.filter.CharacterEncodingFilter     
+        </filter-class>
+    <init-param>
+      <param-name>encoding</param-name>
+      <param-value>UTF-8</param-value>
+    </init-param>
+    <init-param>
+      <param-name>forceEncoding</param-name>
+      <param-value>true</param-value>
+    </init-param>
+  </filter>
+  <filter-mapping>
+    <filter-name>encodingFilter</filter-name>
+    <url-pattern>/*</url-pattern>
+  </filter-mapping>
+  
+<!-- 
+  <filter>
+  	<filter-name>multipartFilter</filter-name>
+	<filter-class>
+		org.springframework.web.multipart.support.MultipartFilter
+	</filter-class>
+	<init-param>
+		<param-name>multipartResolverBeanName</param-name>
+		<param-value>multipartResolver</param-value>
+	</init-param>
+  </filter>
+  <filter-mapping>
+	<filter-name>multipartFilter</filter-name>
+	<url-pattern>/*</url-pattern>
+  </filter-mapping>
+-->
+     
+  <filter>
+    <filter-name>XSS</filter-name>
+	<filter-class>com.kt.giga.home.cms.util.CrossScriptingFilter</filter-class>
+  </filter>
+  <filter-mapping>
+    <filter-name>XSS</filter-name>
+    <url-pattern>/*</url-pattern>
+  </filter-mapping>
+  
+
+  <servlet>
+    <servlet-name>spring</servlet-name>
+    <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+    <init-param>
+      <param-name>contextConfigLocation</param-name>
+      <param-value>
+				/WEB-INF/config/spring-context.xml			
+				/WEB-INF/config/database-context.xml			
+			</param-value>
+    </init-param>
+    <init-param>
+      <param-name>enablePooling</param-name>
+      <param-value>false</param-value>
+    </init-param>
+    <load-on-startup>1</load-on-startup>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>spring</servlet-name>
+    <url-pattern>/</url-pattern>
+  </servlet-mapping>
+  
+  <listener>
+    <listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+  </listener>
+  
+  <session-config>
+	<cookie-config>
+		<http-only>true</http-only>
+	</cookie-config>
+  </session-config>
+
+<!-- Automatisch alle requests redirecten naar https -->
+<!-- 
+  <security-constraint>
+      <web-resource-collection>
+              <web-resource-name>Automatic SSL Forward</web-resource-name>
+              <url-pattern>/*</url-pattern>
+      </web-resource-collection>
+      <user-data-constraint>
+              <transport-guarantee>
+                      CONFIDENTIAL
+              </transport-guarantee>
+      </user-data-constraint>
+  </security-constraint>
+ -->
+	<security-constraint>
+		<web-resource-collection>
+			<web-resource-name>restricted methods</web-resource-name>
+			<url-pattern>/*</url-pattern>
+			<http-method>PUT</http-method>
+			<http-method>DELETE</http-method>
+			<http-method>OPTIONS</http-method>
+			<http-method>PATCH</http-method>
+			<http-method>TRACE</http-method>
+		</web-resource-collection>
+		<auth-constraint />
+	</security-constraint>
+
+	<error-page>
+	  <error-code>404</error-code>
+	  <location>/resources/error/404.html</location>
+	</error-page>
+	
+	<error-page>
+	  <error-code>500</error-code>
+	  <location>/resources/error/500.html</location>
+	</error-page>
+	
+	<error-page>
+	  <exception-type>java.lang.NullPointerException</exception-type>
+	  <location>/resources/error/nullPointer.html</location>
+	</error-page>
+	
+	<!-- 로깅 차단 URI -->
+	<context-param>
+		<param-name>blockURIByLogging</param-name>
+		<param-value>
+			/manager/managerRegister
+		,	/manager/managerModify
+		, 	/manager/logList
+		, 	/manager/logView
+		,	/manager/initSubMenuList
+		</param-value>
+	</context-param>	
+
+</web-app>

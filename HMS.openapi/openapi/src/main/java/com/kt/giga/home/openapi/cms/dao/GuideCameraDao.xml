@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kt.giga.home.openapi.cms.dao.GuideCameraDao">
+
+	<select id="getGuideCameraList" parameterType="string" resultType="GuideCamera">
+		SELECT 
+			A.*
+		FROM 
+			tb_guide_camera AS A
+		WHERE 
+			A.fd_cp_code	= #{cpCode}
+			AND fd_open_yn	= 'Y'
+		ORDER BY 
+			pk_guide_camera DESC	
+	</select>
+
+	<select id="getGuideCamera" parameterType="string" resultType="GuideCamera">
+		SELECT 
+			A.*
+		FROM 
+			tb_guide_camera AS A
+		WHERE 
+			A.fd_cp_code		= #{cpCode}
+			AND A.fd_ver_num	= #{fd_ver_num}
+			AND fd_open_yn		= 'Y'
+		ORDER BY 
+			pk_guide_camera DESC	
+		Limit
+			1
+	</select>
+	
+	<select id="getGuideCameraImg" parameterType="Map" resultType="FileInfo">
+		SELECT *
+		FROM tb_file
+		WHERE fk_unique = #{fk_unique} AND fk_table = 'tb_guide_camera'
+		ORDER BY fd_sort_no ASC
+	</select>
+
+</mapper>
+
+

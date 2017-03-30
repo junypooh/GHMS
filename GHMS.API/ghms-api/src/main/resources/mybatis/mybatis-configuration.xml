@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+
+	<settings>
+		<setting name="defaultExecutorType" value="REUSE" />
+		<!-- <setting name="defaultExecutorType" value="BATCH" /> -->
+	</settings>
+
+	<typeAliases>
+		<!-- hashMap 으로 이미 정의되어있음-->
+		<typeAlias type="java.util.HashMap" alias="hMap" />
+		
+		<!-- DeviceMaster -->
+		<typeAlias alias="SpotDev" 				type="com.kt.giga.home.openapi.ghms.kafka.smcp.gw.ca.domn.spotdev.SpotDev"/>
+		<typeAlias alias="SpotDevDtl" 			type="com.kt.giga.home.openapi.ghms.kafka.smcp.gw.ca.domn.spotdev.SpotDevDtl"/>
+		<typeAlias alias="GenlSetupData" 		type="com.kt.giga.home.openapi.ghms.kafka.smcp.gw.ca.domn.row.GenlSetupData"/>
+		<typeAlias alias="userVo" 				type="com.kt.giga.home.openapi.ghms.user.domain.vo.UserVo"/>
+		<typeAlias alias="snsnTagBasVo" 		type="com.kt.giga.home.openapi.ghms.user.domain.vo.SnsnTagBasVo"/>
+		
+		<typeAlias alias="DeviceModeVo"			type="com.kt.giga.home.openapi.ghms.devices.domain.vo.DeviceModeVo"/>
+		
+		<!-- CMS -->
+		<typeAlias alias="CodeVo" 				type="com.kt.giga.home.openapi.ghms.cms.domain.vo.CodeVo"/>
+		<typeAlias alias="TermsVo" 				type="com.kt.giga.home.openapi.ghms.cms.domain.vo.TermsVo"/>
+		
+		<!-- Mypage -->
+		<typeAlias alias="MasterUserVo"			type="com.kt.giga.home.openapi.ghms.user.domain.vo.MasterUserVo"/>
+		
+		<!-- Config -->
+		<typeAlias alias="ConfigVo"				type="com.kt.giga.home.openapi.ghms.user.domain.vo.ConfigVo"/>
+		
+		<!-- KTInfra -->
+		<typeAlias alias="SpotDevBas" 			type="com.kt.giga.home.openapi.ghms.ktInfra.domain.vo.SpotDevBas"/>
+		<typeAlias alias="SvcTgtBas" 			type="com.kt.giga.home.openapi.ghms.ktInfra.domain.vo.SvcTgtBas"/>
+		<typeAlias alias="SpotDevExpnsnBas"		type="com.kt.giga.home.openapi.ghms.ktInfra.domain.vo.SpotDevExpnsnBas"/>
+		
+		
+	</typeAliases>
+
+	<typeHandlers>
+		<typeHandler javaType="byte[]" jdbcType="BLOB" handler="org.apache.ibatis.type.BlobTypeHandler" />
+		<typeHandler javaType="byte[]" jdbcType="CLOB" handler="org.apache.ibatis.type.ClobTypeHandler" />
+	</typeHandlers>
+
+</configuration>

@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kt.giga.home.cms.customer.dao.PmNoticeDao">
+
+	<sql id="notice">
+		(
+				SELECT 
+				pk_notice_pm AS "pk"
+			,	fk_cp_code AS "cpCode"	
+			,	fd_title AS "title"		
+			,	fd_contents AS "contents"	
+			,	fd_open_yn AS "openYN"	
+			,	fd_admin_name AS "adminName"	
+			,	fd_writer_id AS "writerId"
+			,	n.fd_regdate AS "regDate"
+			,	fd_reserve_yn AS "reserveYN" 
+			,	fd_start_time AS "startTime"
+			,	fd_end_time AS "endTime"		
+				
+			FROM tb_notice_pm AS n 
+			LEFT OUTER JOIN (SELECT pk_admin_id, fd_admin_name FROM tb_admin) AS a 
+			ON n.fd_writer_id = a.pk_admin_id
+			WHERE n.fk_cp_code IN (SELECT fk_cp_code FROM tb_admin_svc WHERE fk_admin_id = #{id})			
+		) AS notice 	
+			
+	</sql>
+
+	<sql id="where">
+	
+		<trim prefix="WHERE" prefixOverrides="AND || OR ">
+		
+			<if test="cpCode != null and cpCode != ''">
+				"cpCode" = #{cpCode}
+			</if>
+			<if test="searchColumn != null and searchColumn != null and searchString != null and searchString != ''">
+				AND "${searchColumn}" LIKE '%' || #{searchString} || '%'
+			</if>
+			<if test="openYnSelect != null and openYnSelect != ''">
+				AND "openYN" = #{openYnSelect}
+			</if>
+		</trim>	
+		
+	</sql>
+	
+	<select id="getCount" parameterType="Map" resultType="int">
+	
+		SELECT COUNT(pk) cnt 
+		FROM <include refid="notice"/> 
+		<include refid="where"/>
+		
+	</select>
+	
+	<select id="get" parameterType="Map" resultType="Map">
+	
+		SELECT 
+			"pk"
+		,	"cpCode"
+		,	"title"
+		,	"contents"
+		,	"openYN"
+		,	"writerId" 
+		,	"startTime"
+		,	"endTime"				
+		FROM <include refid="notice"/>  
+		WHERE "pk" = #{pk} 
+		<if test="cpCode != null and cpCode != ''"> AND "cpCode" = #{cpCode}</if>
+	
+	</select>
+
+ 	<select id="checkDateCount" parameterType="Map" resultType="int">
+		SELECT COUNT(pk) cnt
+		FROM (
+			SELECT 
+				pk_notice_pm AS "pk"
+			,	fk_cp_code AS "cpCode"	
+			,	fd_open_yn AS "openYN"	
+			,	fd_start_time AS "startTime"
+			,	fd_end_time AS "endTime"					
+			FROM tb_notice_pm 
+		) AS dNotice 
+		WHERE
+				"openYN" = 'Y' <!-- 노출 중인 경우에만 카운트 -->
+				<if test="pk != null and pk != ''">
+					AND "pk" != #{pk}
+				</if>
+			<!-- 등록, 리스트 구분 -->
+			<choose>
+					<!-- 등록 페이지에서 등록 하는 경우 : targetCpCode == NULL -->
+					<when test= "cpCode != null and targetCpCode == null">
+						AND "cpCode" = #{cpCode}
+					</when>
+					
+					<!-- cpCode == NULL -->
+					<!-- modify -->
+					<when test= "targetCpCode != null and cpCode == null">
+						AND "cpCode" = #{targetCpCode}
+					</when>
+					<!-- list -->
+					<when test= "targetCpCode != null and cpCode != null">
+						AND "cpCode" = #{targetCpCode}
+					</when>
+			</choose>		
+				
+			<!-- 예약설정, 종료일 체크 구분	-->			
+			<choose>
+				<!--  경우의 수는 총 3가지다. 
+					1. 예약 설정이 해제 되어 있을 때 		: reserveChk == null & start_date == null & end_date == null  
+												& startTime == 00010101010101 & endTime= 99991212121212
+												
+					2. 종료일 설정 안함이 체크 되었을 때  	: endYN != null & reserveChk != null & end_date == null 
+												& endTime= 99991212121212
+												
+					3. 둘다 체크 안되어 있을 때 			 : reserveChk != null & endYN == null  -->
+					
+					<!-- 시작 시간과 종료시간이 존재 하는 경우 : 예약 설정 X, 종료일 체크 X -->
+					<when test="start_date != '00010101010101' and end_date != '99991212121212' ">
+						AND #{start_date}	 <![CDATA[ <= ]]> 	"endTime"
+						AND #{end_date}		 <![CDATA[ >= ]]> 	"startTime"					
+					</when>
+					
+					 <!-- 종료시간이 존재 하지 않는 경우 : 종료일 체크 O, 종료일 == 99991212121212 -->
+					<when test="start_date != '00010101010101' and end_date == '99991212121212' ">
+						AND #{start_date}	<![CDATA[ <= ]]> 	"endTime"
+					</when>
+					
+					<!-- 시작 시간과 종료 시간이 존재 하지 않는 경우 : 예약 설정 O, 시작일 == 00010101010101, 종료일 == 99991212121212 -->
+					<when test="start_date == '00010101010101' and end_date == '99991212121212' ">
+						AND '00000000000001' <![CDATA[ <= ]]> 	"endTime"
+						AND '99999999999999' <![CDATA[ >= ]]> 	"startTime"
+					</when>
+					
+			</choose>			
+	</select>  
+
+	<select id="getList" parameterType="Map" resultType="Map">
+	
+		SELECT * 
+		FROM (
+			SELECT * FROM <include refid="notice"/>
+			<include refid="where"/> 
+			ORDER BY "pk" DESC
+		) AS notice 
+		LIMIT ${pageSize} OFFSET (#{page} - 1) * #{pageSize}
+	</select>
+	
+	<update id="updateOpenYN" parameterType="Map">
+		 
+		UPDATE tb_notice_pm SET fd_open_yn = #{openYN} 
+		WHERE pk_notice_pm = #{pk} 
+	
+	</update>
+
+	<delete id="remove" parameterType="Map">
+	
+		DELETE FROM tb_notice_pm 
+		WHERE pk_notice_pm = #{pk}  		
+	
+	</delete>
+	
+	<insert id="register" parameterType="Map">	
+		INSERT INTO tb_notice_pm(
+			fk_cp_code
+		,	fd_title
+		,	fd_contents
+		,	fd_open_yn
+		,	fd_writer_id
+		,	fd_writer_ip
+		,	fd_regdate
+		,	fd_start_time
+		,	fd_end_time	
+		)
+		
+		VALUES(
+			#{cpCode}
+		,	#{title}		
+		,	#{contents}		
+		,	#{openYN}		
+		,	#{writerId}		
+		,	#{writerIp}		
+		,	#{regDate}
+		<choose>
+			<!--  경우의 수는 총 3가지다. 
+				1. 예약 설정이 해제 되어 있을 때 		: reserveChk == null & start_date == null & end_date == null  
+											& startTime == 00010101010101 & endTime= 99991212121212
+											
+				2. 종료일 설정 안함이 체크 되었을 때  	: endYN != null & reserveChk != null & end_date= 99991212121212
+											
+				3. 둘다 체크 안되어 있을 때 			 : reserveChk != null & endYN == null  -->
+				
+		<when test="reserveChk == null and endYN == null " >
+		,	'00010101010101'
+		,	'99991212121212'
+		</when>
+				
+		<when test="reserveChk != null and endYN != null">
+		,	#{start_date}
+		,	99991212121212
+		</when>
+				
+		<when test="reserveChk != null and endYN == null">
+		,	#{start_date}
+		,	#{end_date}
+		</when>
+		</choose>
+		)			
+	</insert>
+	
+	<update id="modify" parameterType="Map">
+	
+		UPDATE tb_notice_pm SET 
+			fd_title		=	#{title}
+		,	fd_contents		=	#{contents}
+		,	fd_open_yn		=	#{openYN}
+		,	fd_modifier_id	=	#{modifierId}
+		,	fd_modifier_ip	=	#{modifierIp}
+		,	fd_update_date	=	#{updateDate}
+		 	<!--  경우의 수는 총 3가지다. 
+				1. 예약 설정이 해제 되어 있을 때 		: reserveChk == null & start_date == null & end_date == null  
+											& startTime == 00010101010101 & endTime= 99991212121212
+											
+				2. 종료일 설정 안함이 체크 되었을 때  	: endYN != null & reserveChk != null & end_date= 99991212121212
+											
+				3. 둘다 체크 안되어 있을 때 			 : reserveChk != null & endYN == null  -->
+		<choose>
+			<when test="start_date != '00010101010101' and end_date != '99991212121212'" >
+			,	fd_start_time	=	#{start_date}
+			,	fd_end_time		=	#{end_date}
+			</when>
+					
+			<when test="start_date != '00010101010101' and end_date == '99991212121212' ">
+			,	fd_start_time = 	#{start_date}
+			,	fd_end_time		=	99991212121212
+			</when>
+					
+			<when test="start_date == '00010101010101' and end_date == '99991212121212'">
+			,	fd_start_time	=	'00010101010101'
+			,	fd_end_time		=	'99991212121212'
+			</when>
+		</choose>
+		WHERE pk_notice_pm = #{pk}
+	
+	</update>
+
+</mapper>

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kt.giga.home.openapi.cms.dao.FaqDao">
+
+	<select id="getFaqList" parameterType="string" resultType="Faq">
+		SELECT 
+			pk_faq
+		,	fd_name	AS fd_cate_name 
+		, 	fd_title
+		, 	fd_regdate
+		FROM (
+			SELECT 
+				pk_faq
+			, 	fd_title
+			, 	fd_regdate
+			,	fk_svc_fn
+			FROM 	tb_faq
+			WHERE	fk_cp_code = #{cpCode} 
+			AND 	fd_open_yn = 'Y'
+		) AS faq 
+		LEFT OUTER JOIN (
+			SELECT  
+				pk_svc_fn
+			,	fd_name	
+			FROM	tb_svc_fn 
+			WHERE	fk_cp_code = #{cpCode} 
+		) AS fn 
+		ON	faq.fk_svc_fn = fn.pk_svc_fn   
+		ORDER BY pk_faq DESC	
+		<if test="limitCnt !='' and limitCnt != null and limitCnt !=0">	
+			Limit ${limitCnt}	
+		</if>
+		<if test="startSeq !='' and startSeq != null">
+			OFFSET ${startSeq}	
+		</if>		
+				
+	</select>
+
+	<select id="getFaqAllCnt" parameterType="string" resultType="int">
+		SELECT 
+			COUNT(*)
+		FROM 
+			tb_faq
+		WHERE 
+			fk_cp_code	= #{cpCode}
+			AND fd_open_yn	= 'Y'
+	</select>
+
+</mapper>
+
+

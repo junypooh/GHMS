@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kt.giga.home.openapi.dao.HomeProvisionDao">
+
+ 	<select id="getSvcTgtBasBySvcContId" resultType="SvcTgtBas" parameterType="String">
+		SELECT * FROM SVC_TGT_BAS WHERE svc_cont_id = #{svcContId}
+	</select>
+	
+ 	<select id="getSpotDevBas" resultType="SpotDevBas" parameterType="SpotDevBas">
+		SELECT * 
+		  FROM SPOT_DEV_BAS 
+		 WHERE svc_tgt_seq = #{svc_tgt_seq} 
+		   AND spot_dev_seq = #{spot_dev_seq}
+	</select>
+	
+	<select id="getSpotDevBasBySpotDevId" resultType="SpotDevBas" parameterType="SpotDevBas">
+		SELECT * 
+		  FROM SPOT_DEV_BAS 
+		 WHERE svc_tgt_seq = #{svc_tgt_seq} 
+		   AND spot_dev_id = #{spot_dev_id}
+	</select>
+	
+ 	<select id="getSpotDevBasListByUse" resultType="SpotDevBas" parameterType="int">
+		SELECT * 
+		  FROM SPOT_DEV_BAS 
+		 WHERE svc_tgt_seq = #{svc_tgt_seq}
+		   AND del_yn = 'N'
+	</select>
+
+	<select id="getSvcTgtSeq" resultType="int">
+		SELECT NEXTVAL('seq_svc_tgt_bas')
+	</select>
+	
+	<select id="getSpotDevSeq" resultType="int" parameterType="int">
+		SELECT COALESCE(MAX(spot_dev_seq) + 1, 1) FROM spot_dev_bas WHERE svc_tgt_seq = #{svcTgtBasSeq}
+	</select>
+	
+	<select id="getDevModelSeq" resultType="int" parameterType="String">
+		SELECT dev_model_seq FROM DEV_MODEL_BAS WHERE dev_model_cd = #{cctvModelCd}
+	</select>
+	
+	<select id="getDevModelBas" resultType="Map" parameterType="String">
+		SELECT * FROM DEV_MODEL_BAS WHERE dev_model_cd = #{cctvModelCd}
+	</select>
+	
+ 	<select id="getMbrBas" resultType="HashMap" parameterType="int">
+		SELECT * FROM MBR_BAS WHERE mbr_seq = #{mbrSeq}
+	</select>
+	
+
+	<insert id="insertSvcTgtBas" parameterType="SvcTgtBas">
+		INSERT INTO SVC_TGT_BAS (
+			svc_tgt_seq, 
+			dstr_cd, 
+			svc_theme_cd, 
+			unit_svc_cd, 
+			svc_tgt_id,
+			svc_tgt_type_cd, 
+			svc_tgt_nm,
+			svc_cont_id, 
+			oprt_sttus_cd, 
+			del_yn, 
+			cret_dt
+		) VALUES (
+			#{svc_tgt_seq}, 
+			#{dstr_cd}, 
+			#{svc_theme_cd}, 
+			#{unit_svc_cd}, 
+			#{svc_tgt_id},
+			'0000', 
+			#{svc_tgt_nm}, 
+            #{svc_cont_id}, 
+            #{oprt_sttus_cd}, 
+            #{del_yn},
+			NOW()
+		)
+	</insert>
+	
+	<insert id="insertSpotDevBas" parameterType="SpotDevBas">
+		INSERT INTO SPOT_DEV_BAS (
+			spot_dev_seq,
+			svc_tgt_seq,
+			dev_uu_id,
+			dev_model_seq,
+			spot_dev_id,
+ 			dev_nm,
+			use_yn,
+			tmp_dev_yn,               <!-- 디폴트 'N' -->
+			athn_no,
+			eqp_lo_sbst,
+			dev_sttus_cd,
+			latit_div_cd,             <!-- not null setting 'N' -->
+			lngit_div_cd,             <!-- not null setting 'N' -->
+			cret_dt
+		) VALUES (
+			#{spot_dev_seq}, 
+            #{svc_tgt_seq},
+            #{dev_uu_id},
+            #{dev_model_seq},
+            #{spot_dev_id},
+            #{dev_nm},
+            #{use_yn},
+            'N',
+            #{athn_no},
+            #{eqp_lo_sbst},
+            #{dev_sttus_cd},
+            'N',
+            'N',
+			NOW()
+		)
+	</insert>
+
+	<insert id="insertSpotDevExpnsnBas" parameterType="SpotDevExpnsnBas">
+		INSERT INTO SPOT_DEV_EXPNSN_BAS (
+			spot_dev_seq,
+			svc_tgt_seq,
+			spot_dev_item_nm,
+			spot_dev_item_val
+		) VALUES (
+			#{spot_dev_seq}, 
+            #{svc_tgt_seq},
+            #{spot_dev_item_nm},
+            #{spot_dev_item_val}
+		)
+	</insert>
+	
+	<update id="updateSvcTgtBas" parameterType="Map">
+		UPDATE SVC_TGT_BAS
+		   SET <if test="svc_tgt_id != null"> 
+		   	   svc_tgt_id    = #{svc_tgt_id},
+		   	   </if>
+		   	   <if test="svc_tgt_nm != null">
+			   svc_tgt_nm    = #{svc_tgt_nm},
+			   </if>
+		   	   <if test="mbr_seq != null">
+			   mbr_seq    	 = #{mbrs_seq},
+			   </if>
+		   	   <if test="oprt_sttus_cd != null">
+			   oprt_sttus_cd = #{oprt_sttus_cd},
+			   </if>
+		   	   <if test="del_yn != null">
+			   del_yn        = #{del_yn},
+			   </if>
+			   AMD_DT        = NOW()
+		 WHERE SVC_TGT_SEQ = #{svc_tgt_seq}
+	</update>
+
+ 	<update id="updateSpotDevBas" parameterType="Map">
+		UPDATE SPOT_DEV_BAS
+		   SET <if test="spot_dev_id != null">
+		   	   spot_dev_id   = #{spot_dev_id},
+		   	   </if>
+		   	   <if test="dev_uu_id != null">
+		   	   dev_uu_id	 = #{dev_uu_id},
+		   	   </if>
+		   	   <if test="dev_model_seq != null">
+			   dev_model_seq = #{dev_model_seq},
+			   </if>
+		   	   <if test="athn_no != null">
+			   athn_no       = #{athn_no},
+			   </if>
+		   	   <if test="eqp_lo_sbst != null">
+			   eqp_lo_sbst   = #{eqp_lo_sbst},
+			   </if>
+		   	   <if test="dev_sttus_cd != null">
+			   dev_sttus_cd  = #{dev_sttus_cd},
+			   </if>
+		   	   <if test="use_yn != null">
+			   use_yn        = #{use_yn},
+			   </if>
+			   <if test="del_yn != null">
+			   del_yn        = #{del_yn},
+			   </if>
+			   AMD_DT        = NOW()
+		 WHERE svc_tgt_seq = #{svc_tgt_seq} 
+		 	   <if test="spot_dev_seq != null">
+		   AND spot_dev_seq = #{spot_dev_seq}
+		   	   </if>
+	</update>
+
+ 	<update id="updateSpotDevExpnsnBas" parameterType="SpotDevExpnsnBas">
+		UPDATE SPOT_DEV_EXPNSN_BAS
+		   SET spot_dev_item_val = #{spot_dev_item_val}
+		 WHERE svc_tgt_seq = #{svc_tgt_seq}
+		   AND spot_dev_seq = #{spot_dev_seq}
+		   AND spot_dev_item_nm  = #{spot_dev_item_nm}
+	</update>
+	
+	
+	<delete id="deleteSvcTgtBas" parameterType="Map">
+		DELETE FROM SVC_TGT_BAS
+		 WHERE svc_tgt_seq = #{svc_tgt_seq}
+	</delete>
+	
+	<delete id="deleteSpotDevBas" parameterType="Map">
+		DELETE FROM SPOT_DEV_BAS
+		 WHERE svc_tgt_seq = #{svc_tgt_seq} 
+		   AND spot_dev_seq = #{spot_dev_seq}
+	</delete>
+	
+	<delete id="deleteSpotDevConnBas" parameterType="Map">
+		DELETE FROM SPOT_DEV_CONN_BAS
+		 WHERE svc_tgt_seq = #{svc_tgt_seq} 
+		   AND spot_dev_seq = #{spot_dev_seq}
+	</delete>
+	
+	<delete id="deleteSpotDevSetupBas" parameterType="Map">
+		DELETE FROM SPOT_DEV_SETUP_BAS
+		 WHERE svc_tgt_seq = #{svc_tgt_seq} 
+		   AND spot_dev_seq = #{spot_dev_seq}
+	</delete>
+	
+	<delete id="deleteSpotDevScdulSetupTxn" parameterType="Map">
+		DELETE FROM SPOT_DEV_SCDUL_SETUP_TXN
+		 WHERE svc_tgt_seq = #{svc_tgt_seq} 
+		   AND spot_dev_seq = #{spot_dev_seq}
+	</delete>
+	
+	<delete id="deleteSpotDevGenlSetupTxn" parameterType="Map">
+		DELETE FROM SPOT_DEV_GENL_SETUP_TXN
+		 WHERE svc_tgt_seq = #{svc_tgt_seq} 
+		   AND spot_dev_seq = #{spot_dev_seq}
+	</delete>
+	
+	<delete id="deleteSpotDevExpnsnBas" parameterType="Map">
+		DELETE FROM SPOT_DEV_EXPNSN_BAS
+		 WHERE svc_tgt_seq = #{svc_tgt_seq} 
+		   AND spot_dev_seq = #{spot_dev_seq}
+	</delete>	
+	
+</mapper>

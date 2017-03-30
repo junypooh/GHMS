@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kt.giga.home.openapi.cms.dao.TermsAgreeDao">
+
+	<insert id="setTermsAgree" parameterType="TermsAgree">
+		INSERT INTO tb_terms_agree (
+				fk_terms
+			,	fd_agree_yn
+			,	fd_agree_date
+			,	mbr_seq
+			,	fk_cp_code
+			,	fk_terms_code
+		)
+		VALUES (
+				#{fk_terms}
+			,	#{fd_agree_yn}
+			,	now()
+			,	#{mbr_seq}
+			,	#{fk_cp_code}
+			,	(SELECT fk_terms_code FROM tb_terms WHERE pk_terms=#{fk_terms})
+		)
+		
+	</insert>
+
+	<update id="setTermsRetract" parameterType="TermsAgree">
+		UPDATE tb_terms_agree SET
+		
+		fd_retract_date	= now()
+		
+		WHERE 
+				mbr_seq = #{mbr_seq} 
+			and fk_cp_code = #{fk_cp_code}
+	</update>
+
+</mapper>

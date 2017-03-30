@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- <mapper namespace="CMSLog"> -->
+<mapper namespace="com.kt.giga.home.cms.manager.dao.CMSLogDao">
+
+	<sql id="where">
+		<trim prefix="WHERE" prefixOverrides="AND || OR">
+			<if test="search_cms_main_menu != '' and search_cms_main_menu != null ">
+				AND fd_cms_main_menu = #{search_cms_main_menu}
+			</if>
+			<if test="search_cms_sub_menu != '' and search_cms_sub_menu != null ">
+				AND fd_cms_sub_menu = #{search_cms_sub_menu}
+			</if>			
+			<if test="search_start != '' and search_start != null and search_finish != '' and search_finish != null">
+				AND fd_reg_date  BETWEEN #{search_start} AND #{search_finish}
+			</if>
+			<if test="searchString != '' and searchString != null">
+				<if test="searchColumn == 'fd_admin_id'">
+					AND fd_admin_id LIKE '%' || #{searchString} || '%'
+				</if>				
+				<if test="searchColumn == 'fd_class_name'">
+					AND fd_class_name LIKE '%' || #{searchString} || '%'
+				</if>
+				<if test="searchColumn == 'fd_method_name'">
+					AND fd_method_name LIKE '%' || #{searchString} || '%'
+				</if>				
+			</if>			
+		</trim>		
+	</sql>
+	
+	<select id="get" parameterType="int" resultType="HashMap">
+	    SELECT 
+	      pk_cms_log   
+	    , fd_cms_main_menu
+	    , fd_cms_main_menu_name
+	    , fd_cms_sub_menu
+	    , fd_name fd_cms_sub_menu_name
+	    , fd_class_name
+	    , fd_method_name
+	    , fd_admin_id
+	    , fd_access_ip
+	    , fd_reg_date
+	    FROM 
+	    (
+	      SELECT 
+	        pk_cms_log
+	      , fd_admin_id
+	      , fd_cms_main_menu
+	      , fd_name fd_cms_main_menu_name
+	      , fd_cms_sub_menu
+	      , fd_class_name
+	      , fd_method_name
+	      , fd_access_ip
+	      , fd_reg_date
+	      FROM (SELECT * FROM TB_CMS_LOG WHERE pk_cms_log = #{pk_cms_log}) CMS_LOG LEFT OUTER JOIN (SELECT pk_menu, fd_name FROM tb_menu) CMS_MENU 
+	      ON CMS_LOG.fd_cms_main_menu = CMS_MENU.pk_menu
+	    ) CMS_LOG LEFT OUTER JOIN (SELECT pk_menu, FD_NAME FROM tb_menu) CMS_MENU
+	    ON CMS_LOG.fd_cms_sub_menu = CMS_MENU.pk_menu 
+	</select>
+	
+	<select id="getCount" parameterType="HashMap" resultType="int">
+		SELECT COUNT(*) cnt FROM TB_CMS_LOG <include refid="where"/> 
+	</select>
+	
+	<select id="getList" parameterType="HashMap" resultType="HashMap">
+		SELECT * 
+		FROM 
+		(
+		  SELECT 
+		    <!-- rownum as num -->
+		  	pk_cms_log   
+		  , fd_cms_main_menu
+		  , fd_cms_main_menu_name
+		  , fd_cms_sub_menu
+		  , fd_cms_sub_menu_name
+		  , fd_class_name
+		  , fd_method_name
+		  , fd_admin_id
+		  , fd_access_ip
+		  , fd_reg_date
+		  FROM 
+		  (
+		    SELECT * 
+		    FROM 
+		    (
+		      SELECT 
+		        pk_cms_log   
+		      , fd_cms_main_menu
+		      , fd_cms_main_menu_name
+		      , fd_cms_sub_menu
+		      , fd_name fd_cms_sub_menu_name
+		      , fd_class_name
+		      , fd_method_name
+		      , fd_admin_id
+		      , fd_access_ip
+		      , fd_reg_date
+		      FROM 
+		      (
+		        SELECT 
+		          pk_cms_log
+		        , fd_admin_id
+		        , fd_cms_main_menu
+		        , fd_name fd_cms_main_menu_name
+		        , fd_cms_sub_menu
+		        , fd_class_name
+		        , fd_method_name
+		        , fd_access_ip
+		        , fd_reg_date
+		        FROM TB_CMS_LOG CMS_LOG LEFT OUTER JOIN (SELECT pk_menu, fd_name FROM tb_menu) CMS_MENU 
+		        ON CMS_LOG.fd_cms_main_menu = CMS_MENU.pk_menu
+		      ) CMS_LOG LEFT OUTER JOIN (SELECT pk_menu, FD_NAME FROM tb_menu) CMS_MENU
+		      ON CMS_LOG.fd_cms_sub_menu = CMS_MENU.pk_menu 
+		    ) CMS_LOG <include refid="where"/>  
+		    ORDER BY pk_cms_log DESC 
+		  ) CMS_LOG 
+		) CMS_LOG <!-- WHERE num BETWEEN (#{page} - 1) * #{pageSize} + 1 AND #{page} * #{pageSize} -->	
+		LIMIT ${pageSize} OFFSET (#{page} - 1) * #{pageSize}
+	</select>	
+
+	<insert id="register" parameterType="HashMap">
+		INSERT INTO TB_CMS_LOG
+		(
+		    <!-- pk_cms_log -->
+		   	fd_admin_id
+		,   fd_cms_main_menu
+		,   fd_cms_sub_menu
+		,   fd_class_name
+		,   fd_method_name
+		,   fd_access_ip
+		,   fd_reg_date 			
+		)
+		VALUES
+		(
+			<!-- TB_CMS_LOG_SEQ.NEXTVAL -->
+			#{fd_admin_id}	
+		,	#{fd_cms_main_menu}	
+		,	#{fd_cms_sub_menu}	
+		,	#{fd_class_name}	
+		,	#{fd_method_name}	
+		,	#{fd_access_ip}	
+		,	#{fd_reg_date}	
+		)
+		<!-- 
+		<selectKey keyProperty="pk_cms_log" resultType="int">
+			SELECT TB_CMS_LOG_SEQ.CURRVAL AS pk_cms_log FROM DUAL
+		</selectKey>
+		-->
+		<selectKey keyProperty="pk_cms_log" resultType="int" order="AFTER">
+			SELECT currval('seq_cms_log') 
+		</selectKey>					
+	</insert>
+
+</mapper>

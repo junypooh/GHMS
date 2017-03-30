@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kt.giga.home.openapi.health.otv.dao.OTVLocationDao">
+
+	<select id="getOtvConfCnt" parameterType="Map" resultType="int">
+		SELECT count(*)
+		  FROM appl_lo_setup_txn
+		 WHERE svc_cont_id = #{said}
+		   AND dstr_cd = #{dstrCd}
+		   AND svc_theme_cd = #{svcThemeCd}
+		   AND unit_svc_cd = #{unitSvcCode}
+	</select>
+
+	<select id="selectOtvConf" parameterType="Map" resultType="Map">
+		SELECT type_cd as type
+		     , xcrd as x
+		     , ycrd as y
+		  FROM appl_lo_setup_txn
+		 WHERE svc_cont_id = #{said}
+		   AND dstr_cd = #{dstrCd}
+		   AND svc_theme_cd = #{svcThemeCd}
+		   AND unit_svc_cd = #{unitSvcCode}
+	</select>
+	
+	<insert id="insertOtvConf" parameterType="Map">
+		INSERT INTO appl_lo_setup_txn(
+		            svc_cont_id
+		            , type_cd
+		            , xcrd
+		            , ycrd
+		            , dstr_cd
+		            , svc_theme_cd
+		            , unit_svc_cd
+		            , cret_dt
+		   ) VALUES (
+		   			#{said}
+		   			, #{type}
+		   			, #{x}
+		   			, #{y}
+		   			, #{dstrCd}
+		   			, #{svcThemeCd}
+		   			, #{unitSvcCode}
+		   			, now()
+		   	)	
+	</insert>	
+
+	<update id="updateOtvConf" parameterType="Map">
+		UPDATE appl_lo_setup_txn
+		   SET type_cd = #{type}
+		     , xcrd = #{x}
+		     , ycrd = #{y}
+		     , adm_dt = now()
+		 WHERE svc_cont_id = #{said}
+		   AND dstr_cd = #{dstrCd}
+		   AND svc_theme_cd = #{svcThemeCd}
+		   AND unit_svc_cd = #{unitSvcCode}
+		 
+	</update>
+	
+	<delete id="deleteOtvConf" parameterType="Map">
+		DELETE FROM appl_lo_setup_txn 
+		 WHERE svc_cont_id = #{said} 
+		   AND dstr_cd = #{dstrCd}
+		   AND svc_theme_cd = #{svcThemeCd}
+		   AND unit_svc_cd = #{unitSvcCode}
+	</delete>
+	
+</mapper>

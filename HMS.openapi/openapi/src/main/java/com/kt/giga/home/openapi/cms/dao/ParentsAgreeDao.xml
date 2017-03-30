@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kt.giga.home.openapi.cms.dao.ParentsAgreeDao">
+
+	<insert id="setParentsAgree" parameterType="ParentsAgree">
+		INSERT INTO tb_parents_agree (
+				fd_parents_name
+			,	fd_parents_mobile
+			,	fd_agree_yn
+			,	fd_agree_date
+			,	mbr_seq
+			,	fk_cp_code
+		)
+		VALUES (
+				#{fd_parents_name}
+			,	#{fd_parents_mobile}
+			,	#{fd_agree_yn}
+			,	now()
+			,	${mbr_seq}
+			,	#{fk_cp_code}
+		)
+		
+	</insert>
+
+</mapper>

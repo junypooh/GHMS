@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:util="http://www.springframework.org/schema/util"
+    xmlns:tx="http://www.springframework.org/schema/tx"
+    xmlns:aop="http://www.springframework.org/schema/aop"   
+    xmlns:p="http://www.springframework.org/schema/p"
+    xmlns:mvc="http://www.springframework.org/schema/mvc"
+    xmlns:context="http://www.springframework.org/schema/context"
+    xsi:schemaLocation="http://www.springframework.org/schema/mvc 
+    					http://www.springframework.org/schema/mvc/spring-mvc-3.2.xsd
+        				http://www.springframework.org/schema/beans 
+        				http://www.springframework.org/schema/beans/spring-beans-3.2.xsd
+						http://www.springframework.org/schema/tx
+     					http://www.springframework.org/schema/tx/spring-tx-3.2.xsd    
+     					http://www.springframework.org/schema/aop 
+     					http://www.springframework.org/schema/aop/spring-aop-3.2.xsd     			    					    				     				
+        				http://www.springframework.org/schema/util 
+        				http://www.springframework.org/schema/util/spring-util-3.2.xsd
+    					http://www.springframework.org/schema/jdbc
+    					http://www.springframework.org/schema/jdbc/spring-jdbc-3.2.xsd        				
+        				http://www.springframework.org/schema/context 
+        				http://www.springframework.org/schema/context/spring-context-3.2.xsd">
+        				
+  	<aop:aspectj-autoproxy />
+  	<tx:annotation-driven />
+  	        				
+    <context:component-scan base-package="com.kt.giga.home.cms" />
+    
+	<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+	
+    <mvc:annotation-driven>   	
+        <mvc:message-converters>
+	       <bean class="org.springframework.http.converter.StringHttpMessageConverter">
+	            <property name="supportedMediaTypes">
+	                <list>
+	                    <value>text/html;charset=UTF-8</value>
+	                    <value>text/plain;charset=UTF-8</value>
+	                </list>
+	            </property>
+	        </bean>        
+            <bean class="org.springframework.http.converter.FormHttpMessageConverter">
+                <property name="charset">
+                    <bean class="java.nio.charset.Charset" factory-method="forName">
+                        <constructor-arg value="UTF-8"/>
+                    </bean>
+                </property>
+            </bean>
+            <bean class="org.springframework.http.converter.feed.AtomFeedHttpMessageConverter">
+                <property name="supportedMediaTypes" value="application/atom+xml" />
+            </bean>
+            <bean class="org.springframework.http.converter.json.MappingJacksonHttpMessageConverter">
+                <property name="supportedMediaTypes" value="application/json" />
+            </bean>
+        </mvc:message-converters>
+    </mvc:annotation-driven>
+    
+    <mvc:resources  mapping="/resources/**" location="/resources/" />           
+    
+    <mvc:interceptors>
+        <bean id="webContentInterceptor" class="org.springframework.web.servlet.mvc.WebContentInterceptor">
+            <property name="cacheSeconds" value="0"/>
+            <property name="useExpiresHeader" value="true"/>
+            <property name="useCacheControlHeader" value="true"/>
+            <property name="useCacheControlNoStore" value="true"/>
+        </bean>
+    </mvc:interceptors>
+    
+	<!-- resttemplate -->
+	<bean id="restTemplate" class="org.springframework.web.client.RestTemplate" />      
+	    
+    <bean id="viewNameTranslator" class="org.springframework.web.servlet.view.DefaultRequestToViewNameTranslator" />
+
+	<bean class="org.springframework.web.servlet.view.ContentNegotiatingViewResolver">  
+	    <property name="contentNegotiationManager">  
+	        <bean class="org.springframework.web.accept.ContentNegotiationManager">  
+	            <constructor-arg>  
+	            <bean  
+	                class="org.springframework.web.accept.PathExtensionContentNegotiationStrategy">  
+	                <constructor-arg>  
+	                    <map>  
+	                        <entry key="json" value="application/json" />  
+	                        <entry key="xml"  value="application/xml" />  
+	                        <entry key="do"   value="text/html" />
+	                        <entry key="download"   value="application/download" />
+	                    </map>  
+	                </constructor-arg>  
+	            </bean>  
+	            </constructor-arg>  
+	        </bean>  
+	    </property>
+	    <property name="defaultViews">
+	    	<list>
+	    		<bean id="downloadView" class="com.kt.giga.home.cms.monitor.view.DownloadView">
+	    			<property name="contentType" value="application/download"/>
+	    		</bean>
+	    	</list>
+	    </property>
+        <property name="viewResolvers">
+            <list>
+                <bean class="org.springframework.web.servlet.view.BeanNameViewResolver" />
+                <bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+                    <property name="prefix" value="/WEB-INF/views/" />
+                    <property name="suffix" value=".jsp" />
+                    <property name="order"  value="2"/>
+                </bean>
+            </list>
+        </property>	    
+    </bean>      
+    
+	<bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver"> 
+	    <property name="maxUploadSize"  value="52428800" />
+	    <property name="defaultEncoding" value="UTF-8" />
+	</bean>
+	
+</beans>		    

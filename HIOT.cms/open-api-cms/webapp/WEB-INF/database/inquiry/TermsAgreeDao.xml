@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kt.giga.home.cms.inquiry.dao.TermsAgreeDao">
+
+	<sql id="termsAgree">
+	
+		(
+			SELECT 
+				"pk"
+			,	ta."mbrSeq" AS "mbrSeq"
+			,	"mbrId"
+			,	"telNo"
+			,	"agreeYN"
+			,	"agreeDate" 
+			,	"cpCode"
+			,	"termsCode"
+			,	"termsVer"
+			,	"termsTitle" 
+			FROM ( 
+				SELECT * FROM (
+					SELECT 
+						ta.pk_terms_agree AS "pk"
+					, 	ta.fd_agree_yn AS "agreeYN"
+					, 	ta.fd_agree_date AS "agreeDate"
+					, 	ta.fk_cp_code AS "cpCode"
+					,   ta.fk_terms_code AS "termsCode" 
+					, 	ta.mbr_seq AS "mbrSeq" 
+					,	t."termsVer" AS "termsVer"
+					,	t."termsTitle" AS "termsTitle" 
+					FROM tb_terms_agree AS ta 
+					LEFT OUTER JOIN (
+						SELECT 
+							pk_terms AS "pk"
+						,	fd_terms_ver AS "termsVer"
+						,	fd_terms_title AS "termsTitle"
+						FROM tb_terms
+					) AS t 
+					ON ta.fk_terms = t.pk					
+					WHERE ta.fd_retract_date is null and ta.fk_cp_code IN (SELECT fk_cp_code FROM tb_admin_svc WHERE fk_admin_id =  #{id})		
+				) AS termsAgree 		
+				ORDER BY "pk" DESC		
+			) AS ta 
+			LEFT OUTER JOIN (
+				SELECT 
+					mbr_seq AS "mbrSeq"
+				, 	mbr_id AS "mbrId" 
+				FROM mbr_bas
+			) AS mb 	
+			ON ta."mbrSeq" = mb."mbrSeq" 
+			LEFT OUTER JOIN (
+				SELECT 
+					mbr_seq AS "mbrSeq"
+				, 	unit_svc_cd AS "unitSvcCd" 
+				,	MAX(tel_no) AS "telNo" 
+				FROM svc_tgt_conn_bas	
+				GROUP BY mbr_seq, unit_svc_cd
+			) AS stcb 
+			ON ta."mbrSeq" = stcb."mbrSeq" AND ta."cpCode" = stcb."unitSvcCd" 	
+		) AS termsAgree
+	
+<!-- 		(
+			SELECT 
+				ta.pk_terms_agree AS "pk"
+			,	ta.fk_terms AS "fk"
+			, 	ta.fd_agree_yn "agreeYN"
+			, 	ta.fd_agree_date AS "agreeDate"
+			, 	ta.fk_cp_code AS "cpCode"
+			,   ta.fk_terms_code AS "termsCode" 
+			, 	ta.mbr_seq AS "mbrSeq" 
+			,	t."termsVer" AS "termsVer"
+			,	t."termsTitle" AS "termsTitle" 
+			FROM tb_terms_agree AS ta 
+			LEFT OUTER JOIN (
+				SELECT 
+					pk_terms AS "pk"
+				,	fd_terms_ver AS "termsVer"
+				,	fd_terms_title AS "termsTitle"
+				FROM tb_terms
+			) AS t 
+			ON ta.fk_terms = t.pk			
+			WHERE ta.fk_cp_code IN (SELECT fk_cp_code FROM tb_admin_svc WHERE fk_admin_id = #{id})
+		) AS termsAgree 	 -->
+			
+	</sql>
+	
+	<sql id="where">
+	
+		<trim prefix="WHERE" prefixOverrides="AND || OR ">
+			<if test="cpCode != null and cpCode != ''">
+				"cpCode" = #{cpCode}
+			</if>
+			<if test="termsCode != null and termsCode != ''">
+				AND "termsCode" = #{termsCode}
+			</if>
+			<if test="searchColumn != null and searchColumn != '' and searchString != null and searchString != ''">
+				AND "${searchColumn}" LIKE '%' || #{searchString} || '%'
+			</if>
+		</trim>	
+		
+	</sql>	
+	
+	<select id="getCount" parameterType="Map" resultType="int">
+	
+		SELECT COUNT(pk) cnt 
+		FROM <include refid="termsAgree"/> 
+		<include refid="where"/>
+		
+	</select>	
+
+	<select id="getList" parameterType="Map" resultType="Map">
+
+		SELECT * 
+		FROM ( 
+			SELECT * FROM <include refid="termsAgree"/> 
+			<include refid="where"/> 
+			ORDER BY "pk" DESC
+		) AS ta
+		LIMIT ${pageSize} OFFSET (#{page} - 1) * #{pageSize}
+	
+	</select>
+
+</mapper>

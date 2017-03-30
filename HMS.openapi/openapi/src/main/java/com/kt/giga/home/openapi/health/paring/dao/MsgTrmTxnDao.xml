@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kt.giga.home.openapi.health.paring.dao.MsgTrmTxnDao">
+
+	<insert id="setMsgTrmTxn" parameterType="MsgTrmTxn">
+		INSERT INTO msg_trm_txn (
+				conn_terml_id
+			,	mbr_seq
+			,	dstr_cd
+			,	svc_theme_cd
+			,	unit_svc_cd
+			,	msg_trm_sbst
+			,	msg_trm_key_val
+		)
+		VALUES (
+				#{conn_terml_id}
+			,	${mbr_seq}
+			,	#{dstr_cd}
+			,	#{svc_theme_cd}
+			,	#{unit_svc_cd}
+			,	#{msg_trm_sbst}
+			,	#{msg_trm_key_val}
+		)
+	</insert>
+	
+	<select id="getMsgTrmTxn" parameterType="string" resultType="MsgTrmTxn">
+		SELECT 
+			*
+		FROM 
+			msg_trm_txn
+		WHERE 
+			msg_trm_key_val		= #{msg_trm_key_val}
+			AND msg_trm_sbst	= #{msg_trm_sbst}
+	</select>
+
+	<select id="getSvcTgtBas" parameterType="string" resultType="SvcTgtBas">
+		SELECT 
+			*
+		FROM 
+			svc_tgt_bas
+		WHERE 
+			unit_svc_cd			= #{cpCode}
+			AND svc_tgt_id		= #{telNo}
+			AND oprt_sttus_cd	= '0001'
+	</select>
+
+	<select id="getSvcTgtConnBas" parameterType="string" resultType="string">
+		SELECT 
+			conn_terml_id
+		FROM 
+			svc_tgt_conn_bas
+		WHERE 
+			''||mbr_seq			= #{mbr_seq}
+			AND dstr_cd			= #{dstr_cd}
+			AND svc_theme_cd	= #{svc_theme_cd}
+			AND unit_svc_cd		= #{unit_svc_cd}
+	</select>
+	
+</mapper>
+
+

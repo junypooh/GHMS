@@ -1,0 +1,240 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kt.giga.home.infra.dao.idms.SubscriptionDao">
+
+	<insert id="insertSubscription" parameterType="com.kt.giga.home.infra.domain.idms.SubscriptionInfoRequest">
+		<selectKey resultType="java.lang.Integer" keyProperty="historySeq" order="BEFORE">
+			SELECT COALESCE(MAX(APY_IF_HST_SEQ) + 1, 1) FROM PROVISION_SUBS_TXN WHERE SVC_CONT_ID = #{saId}
+        </selectKey>
+            
+		INSERT INTO PROVISION_SUBS_TXN (
+          	SVC_CONT_ID,
+          	CUST_ID, 
+			APY_IF_HST_SEQ, 
+			SVC_TRT_CD, 
+			PROD_CD, 
+			PROD_DTL_CD, 
+			ODR_NO, 
+			SUBS_APY_DT, 
+			SVC_NO,
+			CUST_NM, 
+			HOM_CCTV_MODEL_NM, 
+			HOM_CCTV_MODEL_CD, 
+			HOM_CCTV_SVC_CONT_ID, 
+			HOM_CCTV_MAC_ADR, 
+			HOM_CCTV_SERIAL_NO,
+			HOM_CCTV_PWD, 
+			SRVR_TRT_TYPE_CD, 
+			HOM_CCTV_EQP_LO_CD, 
+			IDMS_ORD_INPUT_DT, 
+			DATA_IF_DIV_CD, 
+			ROLLBK_BF_STTUS_CD, 
+			APY_IF_INFO_CRET_DT, 
+			APY_IF_CMPLT_DT, 
+			APY_IF_CMPLT_YN
+		) VALUES (
+			#{saId},
+			#{custid},
+			#{historySeq},
+			#{intfCode},
+			#{prodCode},
+			#{prodDtlCode},
+			#{woNo},
+			TO_TIMESTAMP(#{insDate}, 'YYYYMMDDHH24MISSMS'),
+			#{serviceNo},
+			#{custName},
+			#{cctvModelName},
+			#{cctvModelCd},
+			#{cctvSaid},
+			#{cctvMac},
+			#{cctvSerial},
+			#{cctvSecret},
+			#{cctvCode},
+			#{cctvLoc},
+			TO_TIMESTAMP(#{idmsInsDate}, 'YYYYMMDDHH24MISSMS'),
+			#{dataReset},
+			#{rollbackState},
+			now(),
+			null,
+			'N'
+		)
+	</insert>
+	
+	<update id="updateSubscription" parameterType="com.kt.giga.home.infra.domain.idms.SubscriptionInfoRequest">
+		UPDATE PROVISION_SUBS_TXN 
+		   SET APY_IF_CMPLT_DT = now(),
+		   	   APY_IF_CMPLT_YN = 'Y' 
+		 WHERE SVC_CONT_ID = #{saId}
+		   AND APY_IF_HST_SEQ = #{historySeq}
+	</update>
+	
+	<select id="selectSubscription" parameterType="com.kt.giga.home.infra.domain.idms.SubscriptionInfoRequest"
+			resultType="com.kt.giga.home.infra.domain.idms.SubscriptionInfoRequest">
+		SELECT A.SVC_CONT_ID AS saId, 
+			B.SVC_TGT_ID AS custid, 
+			A.PROD_CD AS prodCode, 
+			A.PROD_DTL_CD AS prodDtlCode, 
+			A.APY_IF_HST_SEQ AS historySeq,
+			A.SVC_TRT_CD AS intfCode,
+			A.ODR_NO AS woNo, 
+			TO_CHAR(A.SUBS_APY_DT, 'YYYYMMDDHH24MISSMS') || '0' AS insDate,
+			A.DATA_IF_DIV_CD AS dataReset,
+			A.ROLLBK_BF_STTUS_CD AS rollbackState, 
+			TO_CHAR(A.APY_IF_INFO_CRET_DT, 'YYYYMMDDHH24MISSMS') AS infraInsDate,
+			A.SVC_NO AS serviceNo,
+			A.CUST_NM AS custName, 
+			A.HOM_CCTV_MODEL_NM AS cctvModelName, 
+			A.HOM_CCTV_MODEL_CD AS cctvModelCd, 
+			A.HOM_CCTV_SVC_CONT_ID AS cctvSaid,
+			(SELECT SPOT_DEV_ITEM_VAL FROM SPOT_DEV_EXPNSN_BAS SA WHERE SA.SVC_TGT_SEQ = C.SVC_TGT_SEQ AND SA.SPOT_DEV_SEQ = C.SPOT_DEV_SEQ AND SA.SPOT_DEV_ITEM_NM = 'cctvMac') AS cctvMac, 
+			(SELECT SPOT_DEV_ITEM_VAL FROM SPOT_DEV_EXPNSN_BAS SA WHERE SA.SVC_TGT_SEQ = C.SVC_TGT_SEQ AND SA.SPOT_DEV_SEQ = C.SPOT_DEV_SEQ AND SA.SPOT_DEV_ITEM_NM = 'cctvSerial') AS cctvSerial,
+			(SELECT SPOT_DEV_ITEM_VAL FROM SPOT_DEV_EXPNSN_BAS SA WHERE SA.SVC_TGT_SEQ = C.SVC_TGT_SEQ AND SA.SPOT_DEV_SEQ = C.SPOT_DEV_SEQ AND SA.SPOT_DEV_ITEM_NM = 'cctvSecret') AS cctvSecret,
+			A.SRVR_TRT_TYPE_CD AS cctvCode, 
+			C.EQP_LO_SBST AS cctvLoc, 
+			TO_CHAR(A.IDMS_ORD_INPUT_DT, 'YYYYMMDDHH24MISSMS') || '0' AS idmsInsDate, 
+			CASE WHEN B.OPRT_STTUS_CD = '0001' THEN '0002'
+			     WHEN B.OPRT_STTUS_CD = '0002' THEN '0003'
+			     WHEN B.OPRT_STTUS_CD = '0003' THEN '0004'
+			END AS custState
+		  FROM PROVISION_SUBS_TXN A,
+		       SVC_TGT_BAS B,
+		       SPOT_DEV_BAS C
+	     WHERE A.SVC_CONT_ID = B.SVC_CONT_ID
+	       AND B.SVC_TGT_SEQ = C.SVC_TGT_SEQ
+	       AND A.HOM_CCTV_SVC_CONT_ID = C.SPOT_DEV_ID
+	       <if test="saId != null and saId != ''">
+	       AND A.SVC_CONT_ID = #{saId}
+	       </if>
+	       <if test="serviceNo != null and serviceNo != ''">
+	       AND A.SVR_NO = #{serviceNo}
+	       </if>
+	       AND A.APY_IF_HST_SEQ = (
+	       		SELECT MAX(APY_IF_HST_SEQ) 
+	       		  FROM PROVISION_SUBS_TXN 
+	       		 WHERE 1 = 1
+	       		   <if test="saId != null and saId != ''">
+			       AND SVC_CONT_ID = #{saId}
+			       </if>
+			       <if test="serviceNo != null and serviceNo != ''">
+			       AND SVR_NO = #{serviceNo}
+			       </if> 
+	       )
+	</select>	
+	
+	
+	<!-- 홈매니저 프로비저닝청약내역 INSERT -->
+	<insert id="insertManagerSubscription" parameterType="com.kt.giga.home.infra.domain.idms.SubscriptionManagerInfoRequest">
+		<selectKey resultType="java.lang.Integer" keyProperty="managerHisSeq" order="BEFORE">
+			SELECT COALESCE(MAX(SUBS_IF_HST_SEQ) + 1, 1) FROM HOM_MANAGER_PROVISION_SUBS_TXN WHERE SVC_CONT_ID = #{saId}
+        </selectKey>
+            
+		INSERT INTO HOM_MANAGER_PROVISION_SUBS_TXN (
+          	SVC_CONT_ID, 
+			SUBS_IF_HST_SEQ,
+          	CUST_ID,
+			CUST_NM,
+			SVC_NO,
+			SVC_TRT_CD,
+			PROD_CD,
+			PROD_DTL_CD,
+			ODER_NO,
+			SUBS_APY_DT,
+			HOM_GW_MODEL_NM,
+			HOM_GW_MODEL_CD,
+			HOM_GW_SVC_CONT_ID,
+			HOM_GW_MAC_ADR,
+			HOM_GW_SERIAL_NO,
+			HOM_GW_PWD, 
+			SRVR_TRT_TYPE_CD,
+			IDMS_ODER_INPUT_DT,
+			DATA_IF_DIV_CD,
+			ROLLBK_BEF_STTUS_CD,
+			SUBS_IF_INFO_CRET_DT,
+			SUBS_IF_CMPLT_DT,
+			SUBS_IF_CMPLT_YN
+		) VALUES (
+			#{saId},
+			#{managerHisSeq},
+			#{custid},
+			#{custName},
+			#{serviceNo},
+			#{intfCode},
+			#{prodCode},
+			#{prodDtlCode},
+			#{woNo},
+			TO_TIMESTAMP(#{insDate}, 'YYYYMMDDHH24MISSMS'),
+			#{gwModelName},
+			#{gwModelCd},
+			#{gwSaid},
+			#{gwMac},
+			#{gwSerial},
+			#{gwSecret},
+			#{gwCode},
+			TO_TIMESTAMP(#{idmsInsDate}, 'YYYYMMDDHH24MISSMS'),
+			#{dataReset},
+			#{rollbackState},
+			now(),
+			null,
+			'N'
+		)
+	</insert>	
+	
+	<update id="updateManagerSubscription" parameterType="com.kt.giga.home.infra.domain.idms.SubscriptionManagerInfoRequest">
+		UPDATE HOM_MANAGER_PROVISION_SUBS_TXN 
+		   SET SUBS_IF_CMPLT_DT = now(),
+		   	   SUBS_IF_CMPLT_YN = 'Y' 
+		 WHERE SVC_CONT_ID = #{saId}
+		   AND SUBS_IF_HST_SEQ = #{managerHisSeq}
+	</update>
+	
+	<select id="selectSubscriptionManager" parameterType="com.kt.giga.home.infra.domain.idms.SubscriptionManagerInfoRequest"
+			resultType="com.kt.giga.home.infra.domain.idms.SubscriptionManagerInfoRequest">
+		SELECT  A.SVC_CONT_ID AS saId,
+				A.CUST_ID AS custid, 
+				A.PROD_CD AS prodCode, 
+				A.PROD_DTL_CD AS prodDtlCode, 
+				A.SVC_TRT_CD AS intfCode,
+				A.ODER_NO AS woNo, 
+				TO_CHAR(A.SUBS_APY_DT, 'YYYYMMDDHH24MISSMS') || '0' AS insDate,
+				A.SVC_NO AS serviceNo, 
+				A.CUST_NM AS custName, 
+				A.HOM_GW_MODEL_NM AS gwModelName, 
+				A.HOM_GW_MODEL_CD AS gwModelCd, 
+				A.HOM_GW_SVC_CONT_ID AS gwSaid, 
+				A.HOM_GW_MAC_ADR AS gwMac, 
+				A.SRVR_TRT_TYPE_CD AS gwCode, 
+				TO_CHAR(A.IDMS_ODER_INPUT_DT, 'YYYYMMDDHH24MISSMS') || '0' AS idmsInsDate, 
+				CASE WHEN A.SRVR_TRT_TYPE_CD = 'M011' THEN '0002'
+				     WHEN A.SRVR_TRT_TYPE_CD = 'M020' THEN '0003'
+				     WHEN A.SRVR_TRT_TYPE_CD = 'M021' THEN '0003'
+				     WHEN A.SRVR_TRT_TYPE_CD = 'M030' THEN '0002'
+				     WHEN A.SRVR_TRT_TYPE_CD = 'M031' THEN '0002'
+				     WHEN A.SRVR_TRT_TYPE_CD = 'M040' THEN '0002'
+				     WHEN A.SRVR_TRT_TYPE_CD = 'M050' THEN '0004'
+				     WHEN A.SRVR_TRT_TYPE_CD = 'M070' THEN A.ROLLBK_BEF_STTUS_CD
+				END AS custState,
+				A.hom_gw_serial_no AS gwSerial,
+				A.hom_gw_pwd AS gwSecret
+			FROM  HOM_MANAGER_PROVISION_SUBS_TXN A
+			WHERE  1 = 1
+			<if test="saId != null and saId != ''">
+			  AND  A.SVC_CONT_ID = #{saId}
+			</if>
+			<if test="serviceNo != null and serviceNo != ''">
+			  AND  A.SVC_CONT_ID = #{serviceNo}
+			</if>
+			  AND  A.SUBS_IF_HST_SEQ = (
+			       SELECT MAX(SUBS_IF_HST_SEQ) 
+			       FROM HOM_MANAGER_PROVISION_SUBS_TXN 
+			       WHERE 1 = 1
+			      <if test="saId != null and saId != ''">
+			         AND SVC_CONT_ID = #{saId}
+		          </if>
+			      <if test="serviceNo != null and serviceNo != ''">
+			         AND SVC_CONT_ID = #{serviceNo}
+			      </if> 
+			       )
+	</select>
+
+</mapper>

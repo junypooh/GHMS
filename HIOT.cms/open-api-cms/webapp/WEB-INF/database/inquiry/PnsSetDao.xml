@@ -1,0 +1,258 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kt.giga.home.cms.inquiry.dao.PnsSetDao">
+
+	<sql id="pnsSet">
+		(
+			SELECT 
+				A.unit_svc_cd AS "unitSvcCd"
+				,   A.mbr_seq AS "mbrSeq"
+				,   A.conn_terml_id AS "connTermlId"
+				,	B.tel_no AS "telNo"
+				,   C.mbr_id AS "mbrId"
+				,	E.fd_memo AS "unitSvcNm"	
+			    				
+				
+			FROM svc_tgt_conn_setup_txn A			
+			INNER JOIN svc_tgt_conn_bas B		
+			ON A.conn_terml_id = B.conn_terml_id AND A.mbr_seq = B.mbr_seq AND A.dstr_cd = B.dstr_cd
+			
+			INNER JOIN mbr_bas C		
+			ON A.mbr_seq = C.mbr_seq
+			
+			LEFT OUTER JOIN tb_code E
+			ON A.unit_svc_cd = E.fd_name 
+				AND E.fd_up_code = '1200'			
+			
+			Group by c.mbr_id, b.tel_no, A.unit_svc_cd	, E.fd_memo, A.mbr_seq, A.conn_terml_id	
+			
+			union all
+			
+			SELECT 
+				A.unit_svc_cd AS "unitSvcCd"
+				,   A.mbr_seq AS "mbrSeq"
+				,   null AS "connTermlId"
+				,	B.tel_no AS "telNo"
+				,   C.mbr_id AS "mbrId"
+				,	E.fd_memo AS "unitSvcNm"	
+			    				
+				
+			FROM mbr_spot_dev_setup_txn A			
+			INNER JOIN svc_tgt_conn_bas B		
+			ON A.mbr_seq = B.mbr_seq AND A.dstr_cd = B.dstr_cd and A.unit_svc_cd = '003'
+			and A.group_setup_cd = 'A902' and A.setup_cd = '001'
+			
+			INNER JOIN mbr_bas C		
+			ON A.mbr_seq = C.mbr_seq
+			
+			LEFT OUTER JOIN tb_code E
+			ON A.unit_svc_cd = E.fd_name 
+				AND E.fd_up_code = '1200'			
+			
+			Group by c.mbr_id, b.tel_no, A.unit_svc_cd	, E.fd_memo, A.mbr_seq
+		) AS pnsSet
+		
+	</sql>
+	
+	<sql id="pnsSetEx">
+	<![CDATA[
+		(
+			SELECT 
+				A.setup_val AS "setupVal"
+			,   A.mbr_seq AS "mbrSeq"
+			,   A.conn_terml_id AS "connTermlId"
+			,	B.tel_no AS "telNo"
+			,	D.stat_evet_nm AS "statEvetNm"
+			,	D.stat_evet_cd AS "statEvetCd"	
+			,	A.setup_cd	 AS "setupCd"			
+			,	A.unit_svc_cd AS "unitSvcCd"
+			FROM svc_tgt_conn_setup_txn A
+			INNER JOIN svc_tgt_conn_bas B		
+			ON A.conn_terml_id = B.conn_terml_id AND A.mbr_seq = B.mbr_seq AND A.dstr_cd = B.dstr_cd			
+			
+			INNER JOIN tb_cam_stat_evet D	
+			ON A.setup_cd = D.stat_evet_cd AND A.dstr_cd = D.dstr_cd AND A.svc_theme_cd = D.svc_theme_cd AND A.unit_svc_cd = D.unit_svc_cd
+		
+			union all
+		
+			SELECT 
+				'배터리 알림:'|| case when position('BATTERY' in A.setup_val) > 0 then 'Y' else 'N' end
+				|| ',제어 알림:'|| case when position('REMOTE' in A.setup_val) > 0 then 'Y' else 'N' end
+				|| ',장시간 열림:'|| case when position('LONG_OPEN' in A.setup_val) > 0 then 'Y' else 'N' end AS "setupVal"
+				,   A.mbr_seq AS "mbrSeq"
+				,   null AS "connTermlId"
+				,	B.tel_no AS "telNo"
+				, '['|| case when F.dev_type_cd = '4003' then '도어락' when F.dev_type_cd = '0701' then '침입감지센서' when F.dev_type_cd = '1006' then '가스밸브' else '미승인기기' end ||']'|| D.dev_nm AS "statEvetNm"
+			,	null AS "statEvetCd"	
+			,	null AS "setupCd"			
+			,	A.unit_svc_cd AS "unitSvcCd"
+			FROM mbr_spot_dev_setup_txn A			
+			INNER JOIN svc_tgt_conn_bas B		
+			ON A.mbr_seq = B.mbr_seq AND A.dstr_cd = B.dstr_cd and A.unit_svc_cd = '003'
+			and A.group_setup_cd = 'A902' and A.setup_cd = '001'
+			
+			INNER JOIN mbr_bas C		
+			ON A.mbr_seq = C.mbr_seq
+			
+			INNER JOIN spot_dev_bas D
+			ON A.svc_tgt_seq = D.svc_tgt_seq
+			and A.spot_dev_seq = D.spot_dev_seq
+			and D.use_yn = 'Y' and D.del_yn = 'N'
+
+			INNER JOIN dev_model_bas F
+			ON D.dev_model_seq = F.dev_model_seq
+			
+			LEFT OUTER JOIN tb_code E
+			ON A.unit_svc_cd = E.fd_name 
+				AND E.fd_up_code = '1200'	
+			
+			ORDER BY "setupCd"
+		) AS pnsSet
+	]]>
+		
+	</sql>
+	
+	<sql id="where">
+	
+ 		<trim prefix="WHERE" prefixOverrides="AND || OR ">
+			<if test="cpCode != null and cpCode != ''">
+				"unitSvcCd" = #{cpCode}
+			</if>
+			<if test="searchColumn != null and searchColumn != null and searchString != null and searchString != ''">
+				AND "${searchColumn}" LIKE '%' || #{searchString} || '%'
+			</if>
+
+		</trim>	
+	
+	</sql>
+	
+	<sql id="whereEx">
+	
+ 		<trim prefix="WHERE" prefixOverrides="AND || OR ">
+			<if test="unitSvcCd != null and unitSvcCd != ''">
+				"unitSvcCd" = #{unitSvcCd}
+			</if>
+			
+			<if test="mbrSeq != null and mbrSeq != ''">
+				AND "mbrSeq" = #{mbrSeq}
+			</if>
+
+			<if test="telNo != null and telNo != ''">
+				AND "telNo" = #{telNo}
+			</if>
+			
+			<if test="connTermlId != null and connTermlId != ''">
+				AND "connTermlId" = #{connTermlId}
+			</if>
+		</trim>	
+	
+	</sql>
+	
+	<sql id="wherePnsSetDetail">
+	
+ 		<trim prefix="WHERE" prefixOverrides="AND || OR ">
+ 			<if test="mbrSeq != null and mbrSeq != ''">
+				"mbrSeq" = ${mbrSeq}
+			</if>
+			
+			<if test="connTermlId != null and connTermlId != ''">
+				AND "connTermlId" LIKE '${connTermlId}'
+			</if>
+			
+			
+		</trim>	
+	
+	</sql>
+	
+	<select id="getCount" parameterType="Map" resultType="int">
+	
+ 		SELECT 	COUNT(*) AS cnt
+		FROM	<include refid="pnsSet"/> 
+		<include refid="where"/>
+
+	</select>
+	
+	<select id="getList" parameterType="Map" resultType="Map">
+	
+		SELECT *
+		FROM <include refid="pnsSet"/> 
+		<include refid="where"/>
+		LIMIT ${pageSize} OFFSET (#{page} - 1) * #{pageSize}
+	</select>
+	
+	<select id="getListSubInfo" parameterType="Map" resultType="Map">
+	
+		SELECT *
+		FROM <include refid="pnsSetEx"/> 
+		<include refid="whereEx"/>
+	</select>	
+	
+	<select id="getPush" parameterType="Map" resultType="Map">
+		SELECT *
+		FROM (
+			SELECT	
+				svc_tgt_seq AS "svcTgtSeq"
+			,	spot_dev_seq	AS "spotDevSeq"
+			,	spot_dev_item_nm AS "spotDevItemNm"
+			,	spot_dev_item_val AS "spotDevItemVal"
+			FROM spot_dev_expnsn_bas
+		) AS push
+		WHERE 	"spotDevItemNm" = 'saveMode'
+					AND "svcTgtSeq" = #{svcTgtSeq}
+					AND "spotDevSeq" = #{spotDevSeq}
+					<if test="pushColumn != null and pushColumn != ''">
+						<if test="pushColumn == '0'">
+							AND ("spotDevItemVal" = '0' OR "spotDevItemVal" IS NULL)
+						</if>
+						<if test="pushColumn != '0'">
+							AND "spotDevItemVal" = #{pushColumn}
+						</if>
+					</if>
+	</select>
+	
+	<select id="getDetailList" parameterType="Map" resultType="Map">
+		SELECT *
+		FROM <include refid="pnsSet"/> 
+		<include refid="wherePnsSetDetail"/>
+		LIMIT ${pageSize} OFFSET (#{page} - 1) * #{pageSize}		
+	</select>
+	
+	<select id="getDetailCount" parameterType="Map" resultType="int">
+	
+	 	SELECT 	COUNT(*) AS cnt
+		FROM	<include refid="pnsSet"/> 
+		<include refid="wherePnsSetDetail"/>
+
+	</select>	
+	
+	<select id="getPushHistoryCount" parameterType="Map" resultType="int">
+		
+	</select>
+	
+	<select id="getPushHistory" parameterType="Map" resultType="Map">
+		
+	</select>
+	
+	<!-- 리트스에서 이벤트 종류 조회 -->
+	<select id="getEntList" resultType="Map">
+		SELECT 
+				B.stat_evet_nm AS "unitEntNm"
+			,	B.stat_evet_cd AS "unitEntCd" 
+		FROM ( 
+			SELECT setup_cd FROM svc_tgt_conn_setup_txn GROUP BY setup_cd 
+		) as A 
+		
+		INNER JOIN tb_cam_stat_evet B
+		ON A.setup_cd = B.stat_evet_cd	
+	</select>
+
+	<!-- 서비스종류 -->
+	<select id="getSvcList" resultType="Map">
+		SELECT 
+				fd_memo AS "unitSvcNm"
+			,	fd_name AS "unitSvcCd" 
+		FROM tb_code
+		WHERE fd_up_code = '1200' 
+	</select>
+</mapper>

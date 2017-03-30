@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kt.giga.home.cms.manager.dao.MenuDao">
+
+	<sql id="menu">
+	
+		(
+			SELECT 
+				pk_menu AS "menu"
+			,	fd_up_menu AS "upMenu"
+			,	fd_name AS "name"
+			,	fd_url AS "url"
+			,	fd_use_yn AS "useYN"
+			,	fd_sort_no AS "sortNo"
+			FROM tb_menu 
+		) AS menu 	
+			
+	</sql>
+
+	<sql id="where">
+		<where>
+			<if test="upMenu != null and upMenu != ''">
+				"upMenu" = #{upMenu}			
+			</if>
+		</where> 	
+	</sql>
+	
+	<select id="getCount" parameterType="Map" resultType="int">
+	
+		SELECT COUNT(pk) cnt 
+		FROM <include refid="menu"/> 
+		<include refid="where"/>
+		
+	</select>
+	
+	<select id="get" parameterType="Map" resultType="Menu">
+	
+		SELECT * FROM <include refid="menu"/> WHERE "menu" = #{menu} 
+	
+	</select>
+
+	<select id="getList" parameterType="Map" resultType="Menu">
+	
+		SELECT * FROM <include refid="menu"/>
+		<include refid="where"/> 
+		ORDER BY "sortNo" ASC
+		
+	</select>
+	
+	<select id="getSortList" resultType="Menu">
+	
+		SELECT 
+		  pk_menu AS "menu"
+		, fd_up_menu AS "upMenu"
+		, fd_name AS "name"
+		, fd_url AS "url"
+		, fd_use_yn AS "useYN"  
+		FROM (
+		  SELECT pk_menu, fd_up_menu, fd_name, fd_use_yn, fd_url, r_sort_no
+		  , (CASE fd_up_menu WHEN '0000' THEN 0 ELSE fd_sort_no END) AS sort_no 
+		  FROM (
+		    SELECT 
+		      r.fd_sort_no AS r_sort_no
+		    , s.fd_name AS fd_name
+		    , s.pk_menu AS pk_menu
+		    , s.fd_use_yn AS fd_use_yn
+		    , s.fd_sort_no AS fd_sort_no
+		    , s.fd_url AS fd_url
+		    , s.fd_up_menu AS fd_up_menu 
+		    FROM tb_menu r CROSS JOIN tb_menu s
+		    WHERE r.pk_menu = s.fd_up_menu 
+		    OR (r.pk_menu = s.pk_menu AND r.fd_up_menu = '0000') 
+		  ) m ORDER BY r_sort_no ASC, sort_no ASC
+		) menu 		
+	
+	</select>
+	
+	<select id="getListByID" parameterType="String" resultType="Menu">
+	
+		SELECT 
+		  pk_menu AS "menu"
+		, fd_up_menu AS "upMenu"
+		, fd_name AS "name"
+		, fd_use_yn AS "useYN"
+		, fd_sort_no AS "sortNo"
+		, fd_url AS "url" 
+		FROM (
+		  SELECT DISTINCT fk_menu 
+		  FROM (
+		    SELECT fk_role FROM tb_admin_role
+		    WHERE fk_admin_id = #{value}
+		  ) ar INNER JOIN tb_role_menu rm 
+		  ON ar.fk_role = rm.fk_role
+		) tm INNER JOIN tb_menu m
+		ON tm.fk_menu = m.pk_menu		
+	
+	</select>
+	
+	<insert id="register" parameterType="Menu">
+	
+		INSERT INTO tb_menu (
+			pk_menu
+		,	fd_up_menu
+		,	fd_name
+		,	fd_url
+		,	fd_use_yn		
+		,	fd_sort_no
+		)
+		VALUES (
+			#{menu}
+		,	#{upMenu}
+		,	#{name}
+		,	#{url}
+		,	#{useYN}
+		,	#{sortNo}
+		)
+	
+	</insert>
+	
+	<update id="modify" parameterType="Menu">
+	
+		UPDATE tb_menu
+		<trim prefix="SET" prefixOverrides=",">
+			<if test="orgMenu != ''">, pk_menu = #{menu}</if>
+			<if test="upMenu != null and upMenu != ''">, fd_up_menu = #{upMenu}</if>
+			<if test="name != null and name != ''">, fd_name = #{name}</if>
+			<if test="useYN != null and useYN != ''">, fd_use_yn = #{useYN}</if>		
+			<if test="sortNo != null and sortNo != ''">, fd_sort_no = #{sortNo}</if>
+			<if test="url != null">, fd_url = #{url}</if>
+		</trim>
+		<where>
+			<if test="orgMenu == ''">pk_menu = #{menu}</if>
+			<if test="orgMenu != ''">pk_menu = #{orgMenu}</if>
+		</where>
+		
+	</update>
+	
+	<delete id="remove" parameterType="Menu">
+		DELETE FROM tb_menu WHERE pk_menu = #{menu}
+	</delete>	
+	
+</mapper>

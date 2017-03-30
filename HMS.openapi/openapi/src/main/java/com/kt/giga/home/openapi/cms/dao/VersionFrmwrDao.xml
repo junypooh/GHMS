@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kt.giga.home.openapi.cms.dao.VersionFrmwrDao">
+
+	<select id="getVerFrmwrLast" parameterType="string" resultType="VersionFrmwr">
+		SELECT 
+			*
+		FROM 
+			tb_version_Frmwr
+		WHERE
+			LPAD( split_part(fd_ver_num, '.', 1) , 2 , '0') || '.' ||
+			LPAD( split_part(fd_ver_num, '.', 2) , 2 , '0') || '.' ||
+			LPAD( split_part(fd_ver_num, '.', 3) , 2 , '0')
+			= (
+				SELECT 
+					MAX(
+						LPAD( split_part(fd_ver_num, '.', 1) , 2 , '0') || '.' ||
+						LPAD( split_part(fd_ver_num, '.', 2) , 2 , '0') || '.' ||
+						LPAD( split_part(fd_ver_num, '.', 3) , 2 , '0')
+					) AS fd_ver_num
+				FROM 
+					tb_version_Frmwr
+				WHERE 
+						fd_cp_code = #{cpCode} AND fd_beta_yn = 'N'
+			)
+		LIMIT 1
+	</select>
+	
+	<select id="getVerBetaFrmwrLast" parameterType="string" resultType="VersionFrmwr">
+		SELECT 
+			*
+		FROM 
+			tb_version_Frmwr
+		WHERE
+			LPAD( split_part(fd_ver_num, '.', 1) , 2 , '0') || '.' ||
+			LPAD( split_part(fd_ver_num, '.', 2) , 2 , '0') || '.' ||
+			LPAD( split_part(fd_ver_num, '.', 3) , 2 , '0')
+			= (
+				SELECT 
+					MAX(
+						LPAD( split_part(fd_ver_num, '.', 1) , 2 , '0') || '.' ||
+						LPAD( split_part(fd_ver_num, '.', 2) , 2 , '0') || '.' ||
+						LPAD( split_part(fd_ver_num, '.', 3) , 2 , '0')
+					) AS fd_ver_num
+				FROM 
+					tb_version_Frmwr
+				WHERE 
+						fd_cp_code = #{cpCode} AND fd_beta_yn = 'Y'
+			)
+		LIMIT 1
+	</select>
+
+</mapper>

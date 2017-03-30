@@ -1,0 +1,244 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kt.giga.home.openapi.ghms.ktInfra.dao.GhmsProvisionDao">
+
+	<!-- 서비스청약정보 조회 -->
+ 	<select id="selectSvcTgtBasBySvcContId" resultType="com.kt.giga.home.openapi.ghms.ktInfra.domain.vo.SvcTgtBas">
+		SELECT * FROM SVC_TGT_BAS WHERE svc_cont_id = #{svcContId}
+	</select>
+
+	<!-- 서비스청약정보 조회 -->
+ 	<select id="selectSvcTgtBasBySvcContIdByMac" resultType="com.kt.giga.home.openapi.ghms.ktInfra.domain.vo.SvcTgtBas">
+		SELECT * FROM SVC_TGT_BAS a WHERE 1=1
+		<if test="svcContId != null">
+		and svc_cont_id = #{svcContId}
+		</if>
+		<if test="svcTgtSeq != null">
+		and svc_tgt_seq = #{svcTgtSeq}
+		</if>
+		<if test="macAddr != null">
+		and exists (select 1 from SPOT_DEV_EXPNSN_BAS where svc_tgt_seq = a.svc_tgt_seq and SPOT_DEV_ITEM_NM = 'gwMac' and SPOT_DEV_ITEM_VAL = #{macAddr})
+		</if>
+	</select>
+	
+	<!-- 장치정보 조회 -->
+ 	<select id="selectSpotDevBasBySpotDevId" resultType="SpotDevBas">
+		SELECT * 
+		  FROM SPOT_DEV_BAS  
+		 WHERE svc_tgt_seq = #{svc_tgt_seq}
+		 AND   spot_dev_id = #{spot_dev_id}
+		 AND   up_svc_tgt_seq is null
+		 AND   up_spot_dev_seq is null
+	</select>
+
+	<!-- 현장장치 일련번호 생성 -->
+	<select id="selectSvcTgtSeq" resultType="long">
+		SELECT NEXTVAL('seq_svc_tgt_bas')
+	</select>
+	
+	<!-- 서비스 대상 기본 등록 -->
+	<insert id="insertSvcTgtBas">
+		INSERT INTO SVC_TGT_BAS (
+			svc_tgt_seq,
+			<if test="mbr_seq != null">
+			mbr_seq, 
+			</if>
+			dstr_cd, 
+			svc_theme_cd, 
+			unit_svc_cd, 
+			svc_tgt_id,
+			svc_tgt_type_cd, 
+			svc_tgt_nm,
+			svc_cont_id, 
+			oprt_sttus_cd, 
+			del_yn, 
+			cret_dt
+		) VALUES (
+			#{svc_tgt_seq},
+			<if test="mbr_seq != null">
+			#{mbr_seq},
+			</if>
+			#{dstr_cd}, 
+			#{svc_theme_cd}, 
+			#{unit_svc_cd}, 
+			#{svc_tgt_id},
+			#{svc_tgt_type_cd}, 
+			#{svc_tgt_nm}, 
+            #{svc_cont_id}, 
+            #{oprt_sttus_cd}, 
+            #{del_yn},
+			NOW()
+		)
+	</insert>
+	
+	<!-- 서비스 대상 기본 변경 -->
+	<update id="updateSvcTgtBas">
+		UPDATE SVC_TGT_BAS
+		   SET <if test="svc_tgt_id != null"> 
+		   	   svc_tgt_id    = #{svc_tgt_id},
+		   	   </if>
+		   	   <if test="svc_tgt_nm != null">
+			   svc_tgt_nm    = #{svc_tgt_nm},
+			   </if>
+		   	   <if test="mbr_seq != null">
+			   mbr_seq    	 = #{mbr_seq},
+			   </if>
+		   	   <if test="oprt_sttus_cd != null">
+			   oprt_sttus_cd = #{oprt_sttus_cd},
+			   </if>
+		   	   <if test="del_yn != null">
+			   del_yn        = #{del_yn},
+			   </if>
+			   AMD_DT        = NOW()
+		 WHERE SVC_TGT_SEQ = #{svc_tgt_seq}
+	</update>
+	
+	<!-- 삭제되지 않은 현장장치 목록 조회 -->
+ 	<select id="selectSpotDevBasListByUse" resultType="SpotDevBas">
+		SELECT * 
+		  FROM SPOT_DEV_BAS 
+		 WHERE svc_tgt_seq = #{svc_tgt_seq}
+		   AND del_yn = 'N'
+		   AND use_yn = 'Y'
+	</select>
+	
+	<!-- 현장장치일련번호 조회 -->
+	<select id="selectSpotDevSeq" resultType="long">
+		SELECT COALESCE(MAX(spot_dev_seq) + 1, 1) FROM spot_dev_bas WHERE svc_tgt_seq = #{svcTgtBasSeq}
+	</select>
+	
+	<!-- 장치모델일련번호 조회 -->
+	<select id="selectDevModelSeq" resultType="long">
+		SELECT dev_model_seq FROM DEV_MODEL_BAS WHERE dev_model_cd = #{gwModelCd}
+	</select>
+	
+	<!-- 현장 장치 기본 등록 -->
+	<insert id="insertSpotDevBas">
+		INSERT INTO SPOT_DEV_BAS (
+			spot_dev_seq,
+			svc_tgt_seq,
+			dev_uu_id,
+			dev_model_seq,
+			spot_dev_id,
+ 			dev_nm,
+			use_yn,
+			tmp_dev_yn,               <!-- 디폴트 'Y' -->
+			athn_no,
+			dev_sttus_cd,
+			latit_div_cd,             <!-- not null setting 'N' -->
+			lngit_div_cd,             <!-- not null setting 'N' -->
+			cret_dt,
+			frmwr_ver_no
+		) VALUES (
+			#{spot_dev_seq}, 
+            #{svc_tgt_seq},
+            #{dev_uu_id},
+            #{dev_model_seq},
+            #{spot_dev_id},
+            #{dev_nm},
+            #{use_yn},
+            'Y',
+            #{athn_no},
+            #{dev_sttus_cd},
+            'N',
+            'N',
+			NOW(),
+			'0.9.0'
+		)
+	</insert>
+
+	<!-- 현장장치확장기본 등록 -->
+	<insert id="insertSpotDevExpnsnBas">
+		INSERT INTO SPOT_DEV_EXPNSN_BAS (
+			spot_dev_seq,
+			svc_tgt_seq,
+			spot_dev_item_nm,
+			spot_dev_item_val
+		) VALUES (
+			#{spot_dev_seq}, 
+            #{svc_tgt_seq},
+            #{spot_dev_item_nm},
+            #{spot_dev_item_val}
+		)
+	</insert>
+
+	<!-- 현장장치 기본 데이터 변경 -->
+ 	<update id="updateSpotDevBas">
+		UPDATE SPOT_DEV_BAS
+		   SET <if test="spot_dev_id != null and spot_dev_id !=''">
+		   	   spot_dev_id   = #{spot_dev_id},
+		   	   </if>
+		   	   <if test="dev_uu_id != null and dev_uu_id !=''">
+		   	   dev_uu_id	 = #{dev_uu_id},
+		   	   </if>
+		   	   <if test="dev_model_seq != null and dev_model_seq !=''">
+			   dev_model_seq = #{dev_model_seq},
+			   </if>
+		   	   <if test="dev_nm != null and dev_nm !=''">
+			   dev_nm       = #{dev_nm},
+			   </if>
+		   	   <if test="athn_no != null and athn_no !=''">
+			   athn_no       = #{athn_no},
+			   </if>
+		   	   <if test="eqp_lo_sbst != null and eqp_lo_sbst !=''">
+			   eqp_lo_sbst   = #{eqp_lo_sbst},
+			   </if>
+		   	   <if test="dev_sttus_cd != null and dev_sttus_cd !=''">
+			   dev_sttus_cd  = #{dev_sttus_cd},
+			   </if>
+		   	   <if test="use_yn != null and use_yn !=''">
+			   use_yn        = #{use_yn},
+			   </if>
+			   <if test="del_yn != null and del_yn !=''">
+			   del_yn        = #{del_yn},
+			   </if>
+			   AMD_DT        = NOW()
+		 WHERE svc_tgt_seq = #{svc_tgt_seq} 
+		 	   <if test="spot_dev_seq != null">
+		   AND spot_dev_seq = #{spot_dev_seq}
+		   	   </if>
+	</update>
+	
+	<!-- 장치 모델 기본 데이터 조회 -->
+	<select id="selectDevModelBas" resultType="Map">
+		SELECT * FROM DEV_MODEL_BAS WHERE dev_model_cd = #{gwModelCd}
+	</select>
+	
+	<!-- 현장장치 확장 기본 변경 -->
+ 	<update id="updateSpotDevExpnsnBas">
+		UPDATE SPOT_DEV_EXPNSN_BAS
+		   SET spot_dev_item_val = #{spot_dev_item_val}
+		 WHERE svc_tgt_seq = #{svc_tgt_seq}
+		   AND spot_dev_seq = #{spot_dev_seq}
+		   AND spot_dev_item_nm  = #{spot_dev_item_nm}
+	</update>
+	
+	<!-- 임의고객청약내역 데이터 존재 여부 -->
+	<select id="selectRanCustSubsTxnCount" resultType="int">
+		SELECT COUNT(1) FROM RAN_CUST_SUBS_TXN
+		WHERE SVC_TGT_SEQ = #{svcTgtSeq}
+		AND SVC_NO = #{serviceNo}
+	</select>
+	
+	<!-- 임의고객청약내역 데이터 존재 등록 -->
+ 	<insert id="insertRanCustSubsTxnCount">
+		INSERT INTO RAN_CUST_SUBS_TXN
+		(SVC_TGT_SEQ, SVC_NO, CRET_DT)
+		VALUES
+		(#{svcTgtSeq}, #{serviceNo}, NOW())
+	</insert>
+	
+	<!-- 임의고객청약내역 데이터 존재 갱신 -->
+ 	<update id="updateRanCustSubsTxnCount">
+		UPDATE RAN_CUST_SUBS_TXN
+		   SET SVC_NO = #{serviceNo}
+		   , CRET_DT = NOW()
+		 WHERE SVC_TGT_SEQ = #{svcTgtSeq}
+	</update>
+	
+	
+	
+</mapper>
+
+

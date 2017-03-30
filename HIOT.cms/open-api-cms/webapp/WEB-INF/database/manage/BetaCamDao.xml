@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kt.giga.home.cms.manage.dao.BetaCamDao">
+
+	<select id="getCamList" resultType="Map">
+	
+		SELECT 
+			svc_tgt_seq AS "svcTgtSeq"
+		,	spot_dev_seq AS "spotDevSeq"
+		FROM tb_version_frmwr_cam
+	
+	</select>
+
+	<select id="getCamInfoList" parameterType="Map" resultType="Map">
+	
+		select 	
+			sdb.spot_dev_seq AS "spotDevSeq" 		-- 현장장치 일련번호
+		,	sdb.svc_tgt_seq AS "svcTgtSeq"			-- 서비스대상 일련번호 
+		,	sdb.spot_dev_id AS "spotDevId"			-- 현장장치 아이디
+		,	sdb.dev_uu_id AS "devUUID"				-- 현장장치 UUID
+		,	sdb.dev_nm AS "devNm"					-- 현장장치 닉네임
+		,	mb.mbr_id AS "mbrId"					-- 회원 아이디
+		,	stcb.tel_no AS "telNo" 					-- 전화번호
+		,	stcb.tel_cnt AS "telCnt" 				-- 전화번호 카운트
+		,	sdeb.dev_cctc_mac AS "devCctvMac" 		-- 현장장치 맥주소
+		,	sdeb1.dev_con_stat AS "devConStat" 		-- 현장장치 접속상태
+		from 	spot_dev_bas sdb
+			inner join 	svc_tgt_bas stb on (sdb.svc_tgt_seq = stb.svc_tgt_seq)
+			inner join 	mbr_bas mb on (stb.mbr_seq = mb.mbr_seq)
+			inner join (
+				SELECT	mbr_seq, count(mbr_seq) tel_cnt, MAX(tel_no) AS tel_no 
+				FROM 	svc_tgt_conn_bas 
+				WHERE 	unit_svc_cd = '001' 
+				group by mbr_seq
+			) AS stcb ON	stb.mbr_seq = stcb.mbr_seq 	
+			left join (
+				select 	distinct(svc_tgt_seq), spot_dev_seq, spot_dev_item_val as dev_cctc_mac
+				from 	spot_dev_expnsn_bas 
+				where	spot_dev_item_nm='cctvMac'
+						  	and spot_dev_seq IN
+							<foreach item="item" index="index" collection="spotDevSeqList"   open="(" separator="," close=")">
+					        	#{item}
+					  		</foreach>   
+				
+			) AS sdeb ON 	(sdb.svc_tgt_seq=sdeb.svc_tgt_seq and sdeb.spot_dev_seq=sdb.spot_dev_seq)
+			left join (
+				select 	distinct(svc_tgt_seq), spot_dev_seq, spot_dev_item_val as dev_con_stat
+				from 	spot_dev_expnsn_bas
+				where	spot_dev_item_nm='conStat'
+							and spot_dev_seq IN
+							<foreach item="item" index="index" collection="spotDevSeqList"   open="(" separator="," close=")">
+					        	#{item}
+					  		</foreach>   
+			) AS sdeb1 ON 	(sdb.svc_tgt_seq=sdeb1.svc_tgt_seq and sdeb1.spot_dev_seq=sdb.spot_dev_seq)
+		<where>
+			stb.del_yn = 'N'
+			and sdb.use_yn = 'Y'
+			and sdb.spot_dev_seq IN
+			<foreach item="item" index="index" collection="spotDevSeqList"   open="(" separator="," close=")">
+	        	#{item}
+	  		</foreach>
+	  		and sdb.svc_tgt_seq IN
+			<foreach item="item" index="index" collection="svcTgtSeqList"   open="(" separator="," close=")">
+	        	#{item}
+	  		</foreach>
+		</where>
+
+	</select>
+	
+	<insert id="register" parameterType="Map">
+	
+		INSERT INTO tb_version_frmwr_cam(
+		
+			svc_tgt_seq
+		,	spot_dev_seq
+		
+		)
+		VALUES(
+		
+			#{svcTgtSeq}
+		,	#{spotDevSeq}
+		
+		)
+			
+	</insert>
+	
+	<delete id="remove" parameterType="Map">
+	
+		DELETE FROM tb_version_frmwr_cam
+		WHERE svc_tgt_seq = #{svcTgtSeq} AND spot_dev_seq = #{spotDevSeq}
+	
+	</delete>
+	
+</mapper>
